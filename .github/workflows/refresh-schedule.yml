@@ -1,0 +1,21 @@
+# Optional: re-reads superfit.club weekly so the bundled schedule (used by the web/iPhone
+# version, which can't fetch the site directly) stays current. Commits only if something changed.
+name: Refresh schedule
+on:
+  workflow_dispatch:
+  schedule: [{ cron: '17 5 * * 1' }]
+permissions: { contents: write }
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: node tools/build-schedule.mjs
+      - run: |
+          git config user.name "schedule-bot"
+          git config user.email "schedule-bot@users.noreply.github.com"
+          if git diff --quiet -- www/data/schedule.json; then echo "No changes"; exit 0; fi
+          git add www/data/schedule.json && git commit -m "Refresh schedule" && git push

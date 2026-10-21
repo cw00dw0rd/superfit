@@ -1,0 +1,8 @@
+{
+  "appId": "com.personal.sfplanner",
+  "appName": "SF Planner",
+  "webDir": "www",
+  "plugins": {
+    "CapacitorHttp": { "enabled": true }
+  }
+}

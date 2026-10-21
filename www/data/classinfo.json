@@ -1,0 +1,641 @@
+{
+ "_note": "Matched against class names by the keywords below (case-insensitive, first match wins, so specific entries come before general ones). Add entries freely.",
+ "entries": [
+  {
+   "keys": [
+    "BODYPUMP HEAVY"
+   ],
+   "title": "BODYPUMP™ HEAVY",
+   "brand": "Les Mills",
+   "duration": "45 min",
+   "intensity": 4,
+   "focus": [
+    "Strength"
+   ],
+   "what": "BODYPUMP variant with heavier weights and fewer reps per track, aimed at building strength rather than endurance.",
+   "bring": "Towel, water. Barbell and plates are provided.",
+   "tip": "Do a few regular BODYPUMP classes first to get the technique down."
+  },
+  {
+   "keys": [
+    "BODYPUMP",
+    "BODY PUMP"
+   ],
+   "title": "BODYPUMP™",
+   "brand": "Les Mills",
+   "duration": "55 min (also 30/45)",
+   "intensity": 3,
+   "focus": [
+    "Strength",
+    "Endurance"
+   ],
+   "what": "Barbell workout with light-to-moderate weights and lots of reps. Tracks work squats, chest, back, triceps, biceps, lunges, shoulders and core to music.",
+   "bring": "Towel, water. Barbell, plates and step are provided.",
+   "tip": "Start lighter than you think, because the high rep count adds up fast."
+  },
+  {
+   "keys": [
+    "BODYCOMBAT",
+    "BODY COMBAT"
+   ],
+   "title": "BODYCOMBAT™",
+   "brand": "Les Mills",
+   "duration": "55 min (also 30/45)",
+   "intensity": 4,
+   "focus": [
+    "Cardio",
+    "Martial arts"
+   ],
+   "what": "Non-contact martial-arts cardio: punches, kicks and knee strikes from karate, boxing, taekwondo, capoeira and muay thai. No equipment.",
+   "bring": "Towel, water, cushioned trainers.",
+   "tip": "Learn the moves at low impact first, then add power."
+  },
+  {
+   "keys": [
+    "BODYATTACK",
+    "BODY ATTACK"
+   ],
+   "title": "BODYATTACK™",
+   "brand": "Les Mills",
+   "duration": "55 min (also 30/45)",
+   "intensity": 4,
+   "focus": [
+    "Cardio",
+    "Athletic"
+   ],
+   "what": "High-energy sports-inspired interval class that mixes aerobic moves (running, lunging, jumping) with strength and stabilisation.",
+   "bring": "Towel, water, good trainers.",
+   "tip": "Low-impact options are shown for every track."
+  },
+  {
+   "keys": [
+    "BODYBALANCE",
+    "BODY BALANCE",
+    "BODYFLOW"
+   ],
+   "title": "BODYBALANCE™ / BODYFLOW™",
+   "brand": "Les Mills",
+   "duration": "55 min (also 30/45)",
+   "intensity": 1,
+   "focus": [
+    "Mobility",
+    "Mind & body"
+   ],
+   "what": "Yoga, tai chi and pilates set to music. Builds flexibility, core strength and calm, and ends with relaxation.",
+   "bring": "Comfortable clothes, barefoot. Mats are usually provided.",
+   "tip": "A good recovery session between harder days."
+  },
+  {
+   "keys": [
+    "BODYSTEP",
+    "BODY STEP"
+   ],
+   "title": "BODYSTEP™",
+   "brand": "Les Mills",
+   "duration": "55 min (also 30/45)",
+   "intensity": 3,
+   "focus": [
+    "Cardio",
+    "Legs"
+   ],
+   "what": "Full-body cardio on a height-adjustable step: up, over and around it, plus strength tracks for conditioning.",
+   "bring": "Towel, water, trainers.",
+   "tip": "Start with the step at its lowest setting."
+  },
+  {
+   "keys": [
+    "BODYJAM",
+    "BODY JAM"
+   ],
+   "title": "BODYJAM™",
+   "brand": "Les Mills",
+   "duration": "55 min",
+   "intensity": 3,
+   "focus": [
+    "Cardio",
+    "Dance"
+   ],
+   "what": "Dance-cardio class built on the latest dance styles and music. The aim is the feel of the moves, not perfect technique.",
+   "bring": "Trainers, water.",
+   "tip": "Choreography repeats, so it clicks by the second or third time."
+  },
+  {
+   "keys": [
+    "CXWORX",
+    "CX WORX",
+    "LES MILLS CORE",
+    "LESMILLS CORE",
+    "CORE"
+   ],
+   "title": "LES MILLS CORE™ (formerly CXWORX)",
+   "brand": "Les Mills",
+   "duration": "30 min",
+   "intensity": 3,
+   "focus": [
+    "Core",
+    "Strength"
+   ],
+   "what": "Short, intense core training with bands, plates and bodyweight: abs, obliques, glutes and lower back.",
+   "bring": "Towel, water.",
+   "tip": "Pairs well right after a cardio class."
+  },
+  {
+   "keys": [
+    "GRIT STRENGTH"
+   ],
+   "title": "LES MILLS GRIT™ Strength",
+   "brand": "Les Mills",
+   "duration": "30 min",
+   "intensity": 5,
+   "focus": [
+    "HIIT",
+    "Strength"
+   ],
+   "what": "30-minute HIIT with barbell, plates and bodyweight to build strength and lean muscle.",
+   "bring": "Towel, water.",
+   "tip": "Max effort in short bursts; rest is part of the plan."
+  },
+  {
+   "keys": [
+    "GRIT CARDIO"
+   ],
+   "title": "LES MILLS GRIT™ Cardio",
+   "brand": "Les Mills",
+   "duration": "30 min",
+   "intensity": 5,
+   "focus": [
+    "HIIT",
+    "Cardio"
+   ],
+   "what": "Bodyweight-only HIIT for speed, power and maximum calorie burn.",
+   "bring": "Towel, water.",
+   "tip": "No equipment, so it is easy to drop into."
+  },
+  {
+   "keys": [
+    "GRIT ATHLETIC",
+    "GRIT PLYO"
+   ],
+   "title": "LES MILLS GRIT™ Athletic",
+   "brand": "Les Mills",
+   "duration": "30 min",
+   "intensity": 5,
+   "focus": [
+    "HIIT",
+    "Agility"
+   ],
+   "what": "Sports-conditioning HIIT with step, plates and bodyweight: agility, power and speed.",
+   "bring": "Towel, water.",
+   "tip": "Plyometric, so warm up your ankles."
+  },
+  {
+   "keys": [
+    "GRIT"
+   ],
+   "title": "LES MILLS GRIT™",
+   "brand": "Les Mills",
+   "duration": "30 min",
+   "intensity": 5,
+   "focus": [
+    "HIIT"
+   ],
+   "what": "30-minute high-intensity interval training in Strength, Cardio or Athletic formats, often run as small-group team training.",
+   "bring": "Towel, water.",
+   "tip": "Check which format is on before you go."
+  },
+  {
+   "keys": [
+    "RPM"
+   ],
+   "title": "RPM™",
+   "brand": "Les Mills",
+   "duration": "45 min (also 30)",
+   "intensity": 4,
+   "focus": [
+    "Cardio",
+    "Cycling"
+   ],
+   "what": "Indoor cycling to music: climbs, sprints and flats. You control resistance and speed.",
+   "bring": "Towel, water, padded shorts if you like.",
+   "tip": "Ask the instructor to help set up your bike the first time."
+  },
+  {
+   "keys": [
+    "SPRINT"
+   ],
+   "title": "LES MILLS SPRINT™",
+   "brand": "Les Mills",
+   "duration": "30 min",
+   "intensity": 5,
+   "focus": [
+    "HIIT",
+    "Cycling"
+   ],
+   "what": "30-minute HIIT on an indoor bike: short all-out efforts, low impact on the joints.",
+   "bring": "Towel, water.",
+   "tip": "Short and brutal, and done in half an hour."
+  },
+  {
+   "keys": [
+    "SH'BAM",
+    "SHBAM",
+    "SH’BAM"
+   ],
+   "title": "SH'BAM™",
+   "brand": "Les Mills",
+   "duration": "45 min",
+   "intensity": 2,
+   "focus": [
+    "Dance",
+    "Cardio"
+   ],
+   "what": "Fun, easy-to-follow dance workout to chart music. No dance experience needed.",
+   "bring": "Trainers, water.",
+   "tip": "The best class to bring a friend to for the first time."
+  },
+  {
+   "keys": [
+    "LES MILLS DANCE",
+    "DANCE"
+   ],
+   "title": "LES MILLS DANCE™",
+   "brand": "Les Mills",
+   "duration": "45 min",
+   "intensity": 3,
+   "focus": [
+    "Dance"
+   ],
+   "what": "Dance workout to the latest music, with styles changing every release.",
+   "bring": "Trainers, water.",
+   "tip": "Go for energy over precision."
+  },
+  {
+   "keys": [
+    "TONE"
+   ],
+   "title": "LES MILLS TONE™",
+   "brand": "Les Mills",
+   "duration": "45 min",
+   "intensity": 3,
+   "focus": [
+    "Cardio",
+    "Strength",
+    "Core"
+   ],
+   "what": "Mix of cardio, resistance and core work with bands and light weights, finishing with stretching.",
+   "bring": "Towel, water.",
+   "tip": "An all-rounder if you can only do one class a week."
+  },
+  {
+   "keys": [
+    "CEREMONY"
+   ],
+   "title": "LES MILLS CEREMONY™",
+   "brand": "Les Mills",
+   "duration": "45 min",
+   "intensity": 4,
+   "focus": [
+    "Strength",
+    "Boxing"
+   ],
+   "what": "Combines strength training (dumbbells), boxing combinations and core work to live-style music.",
+   "bring": "Towel, water.",
+   "tip": ""
+  },
+  {
+   "keys": [
+    "BARRE"
+   ],
+   "title": "Barre",
+   "brand": "",
+   "duration": "30–45 min",
+   "intensity": 2,
+   "focus": [
+    "Toning",
+    "Posture"
+   ],
+   "what": "Ballet-inspired small, controlled movements for legs, glutes and core.",
+   "bring": "Grip socks or barefoot.",
+   "tip": "Small moves with a big burn."
+  },
+  {
+   "keys": [
+    "CONQUER"
+   ],
+   "title": "LES MILLS CONQUER™",
+   "brand": "Les Mills",
+   "duration": "45 min",
+   "intensity": 5,
+   "focus": [
+    "Functional",
+    "Boxing"
+   ],
+   "what": "Combat-inspired functional training with boxing bags and bodyweight work.",
+   "bring": "Towel, water, wraps if you have them.",
+   "tip": ""
+  },
+  {
+   "keys": [
+    "ZUMBA"
+   ],
+   "title": "Zumba®",
+   "brand": "Zumba",
+   "duration": "45–60 min",
+   "intensity": 3,
+   "focus": [
+    "Dance",
+    "Cardio"
+   ],
+   "what": "Latin-inspired dance fitness (salsa, merengue, reggaeton) as a party-style cardio workout.",
+   "bring": "Trainers, water.",
+   "tip": ""
+  },
+  {
+   "keys": [
+    "YOGA"
+   ],
+   "title": "Yoga",
+   "brand": "",
+   "duration": "45–75 min",
+   "intensity": 1,
+   "focus": [
+    "Mobility",
+    "Mind & body"
+   ],
+   "what": "Postures (asanas) and breathing for flexibility, strength and relaxation. Styles range from calm (Hatha, Yin) to dynamic (Vinyasa, Power).",
+   "bring": "Comfortable clothes. Mats are usually provided.",
+   "tip": ""
+  },
+  {
+   "keys": [
+    "PILATES"
+   ],
+   "title": "Pilates",
+   "brand": "",
+   "duration": "45–60 min",
+   "intensity": 2,
+   "focus": [
+    "Core",
+    "Posture"
+   ],
+   "what": "Mat-based core and stability work with a focus on control, breathing and posture.",
+   "bring": "Comfortable clothes.",
+   "tip": ""
+  },
+  {
+   "keys": [
+    "SHAPES"
+   ],
+   "title": "SHAPES",
+   "brand": "Les Mills",
+   "duration": "~50 min",
+   "intensity": 3,
+   "focus": [
+    "Toning"
+   ],
+   "what": "Listed under Les Mills in the Superfit plan. I couldn't verify the program details offline, so ask at the studio or check lesmills.com.",
+   "bring": "Towel, water.",
+   "tip": ""
+  },
+  {
+   "keys": [
+    "BAUCH"
+   ],
+   "title": "Bauch (Abs)",
+   "brand": "",
+   "duration": "20 min (Express/Teamtraining)",
+   "intensity": 3,
+   "focus": [
+    "Core"
+   ],
+   "what": "Short, focused abdominal and core session: crunch variations, planks and anti-rotation work.",
+   "bring": "Towel.",
+   "tip": "Easy to tack onto the end of another workout."
+  },
+  {
+   "keys": [
+    "BEINE UND PO",
+    "BEINE"
+   ],
+   "title": "Beine und Po (Legs & glutes)",
+   "brand": "",
+   "duration": "20 min",
+   "intensity": 3,
+   "focus": [
+    "Legs",
+    "Glutes"
+   ],
+   "what": "Squats, lunges, bridges and band work for legs and glutes.",
+   "bring": "Towel.",
+   "tip": ""
+  },
+  {
+   "keys": [
+    "TRX"
+   ],
+   "title": "TRX® Suspension Training",
+   "brand": "TRX",
+   "duration": "20–30 min",
+   "intensity": 3,
+   "focus": [
+    "Strength",
+    "Core"
+   ],
+   "what": "Bodyweight training with suspension straps. You set the difficulty by changing your body angle, and every move also trains the core.",
+   "bring": "Towel, water.",
+   "tip": "Walk your feet back to make it easier and forward to make it harder."
+  },
+  {
+   "keys": [
+    "FULLBODY",
+    "FULL BODY",
+    "GANZKÖRPER"
+   ],
+   "title": "Fullbody Workout",
+   "brand": "",
+   "duration": "20 min",
+   "intensity": 3,
+   "focus": [
+    "Strength",
+    "Conditioning"
+   ],
+   "what": "Full-body circuit that hits legs, push, pull and core in one short session.",
+   "bring": "Towel, water.",
+   "tip": ""
+  },
+  {
+   "keys": [
+    "MOBILITY"
+   ],
+   "title": "Mobility",
+   "brand": "",
+   "duration": "20 min",
+   "intensity": 1,
+   "focus": [
+    "Mobility"
+   ],
+   "what": "Joint mobility and active stretching drills for hips, spine and shoulders.",
+   "bring": "Comfortable clothes.",
+   "tip": "Great before or after a lifting session."
+  },
+  {
+   "keys": [
+    "CIRCUIT"
+   ],
+   "title": "Circuit",
+   "brand": "",
+   "duration": "15–20 min",
+   "intensity": 4,
+   "focus": [
+    "HIIT",
+    "Conditioning"
+   ],
+   "what": "Station-based interval circuit: short work blocks, quick rotations. The WOMEN tag marks women-only sessions.",
+   "bring": "Towel, water.",
+   "tip": ""
+  },
+  {
+   "keys": [
+    "FASZIEN"
+   ],
+   "title": "Faszientraining (Fascia training)",
+   "brand": "",
+   "duration": "20 min",
+   "intensity": 1,
+   "focus": [
+    "Recovery",
+    "Mobility"
+   ],
+   "what": "Foam rolling and dynamic stretching to loosen fascia and improve mobility.",
+   "bring": "Comfortable clothes.",
+   "tip": ""
+  },
+  {
+   "keys": [
+    "RÜCKEN",
+    "RUECKEN",
+    "BACK"
+   ],
+   "title": "Rückenfit (Back fitness)",
+   "brand": "",
+   "duration": "30–45 min",
+   "intensity": 1,
+   "focus": [
+    "Back health",
+    "Core"
+   ],
+   "what": "Strengthening and mobilising exercises for the back and trunk to prevent and relieve back pain.",
+   "bring": "Comfortable clothes.",
+   "tip": ""
+  },
+  {
+   "keys": [
+    "BBP",
+    "BAUCH-BEINE-PO",
+    "BAUCH BEINE PO"
+   ],
+   "title": "Bauch-Beine-Po (Abs, legs, glutes)",
+   "brand": "",
+   "duration": "30–45 min",
+   "intensity": 2,
+   "focus": [
+    "Toning"
+   ],
+   "what": "Classic toning class for abs, legs and glutes using bodyweight, bands and light weights.",
+   "bring": "Towel, water.",
+   "tip": ""
+  },
+  {
+   "keys": [
+    "CYCLING",
+    "SPINNING",
+    "INDOOR CYCLE",
+    "CYCLE"
+   ],
+   "title": "Indoor Cycling",
+   "brand": "",
+   "duration": "45–60 min",
+   "intensity": 4,
+   "focus": [
+    "Cardio",
+    "Cycling"
+   ],
+   "what": "Instructor-led stationary-bike class with intervals and climbs.",
+   "bring": "Towel, water.",
+   "tip": ""
+  },
+  {
+   "keys": [
+    "HIIT",
+    "TABATA",
+    "ZIRKEL",
+    "CIRCUIT"
+   ],
+   "title": "HIIT / Circuit",
+   "brand": "",
+   "duration": "30–45 min",
+   "intensity": 4,
+   "focus": [
+    "HIIT"
+   ],
+   "what": "Short, intense work intervals with brief rests, often rotating through stations.",
+   "bring": "Towel, water.",
+   "tip": ""
+  },
+  {
+   "keys": [
+    "FUNCTIONAL",
+    "FUNKTIONAL",
+    "TEAM",
+    "BOOTCAMP",
+    "CROSS"
+   ],
+   "title": "Functional / Team Training",
+   "brand": "",
+   "duration": "30–60 min",
+   "intensity": 4,
+   "focus": [
+    "Functional",
+    "Strength"
+   ],
+   "what": "Small-group coached training with kettlebells, sleds, ropes and bodyweight, built on everyday movement patterns.",
+   "bring": "Towel, water. Places are often limited, so check whether you need to book.",
+   "tip": ""
+  },
+  {
+   "keys": [
+    "BOX",
+    "KICK"
+   ],
+   "title": "Boxing / Kickboxing",
+   "brand": "",
+   "duration": "45–60 min",
+   "intensity": 4,
+   "focus": [
+    "Cardio",
+    "Martial arts"
+   ],
+   "what": "Punching and kicking combinations, pad work and conditioning.",
+   "bring": "Towel, water, gloves or wraps if you have them.",
+   "tip": ""
+  },
+  {
+   "keys": [
+    "STRETCH",
+    "MOBILITY",
+    "FASZIEN"
+   ],
+   "title": "Stretch / Mobility",
+   "brand": "",
+   "duration": "30 min",
+   "intensity": 1,
+   "focus": [
+    "Mobility",
+    "Recovery"
+   ],
+   "what": "Stretching, fascia rolling and mobility drills for recovery and range of motion.",
+   "bring": "Comfortable clothes.",
+   "tip": ""
+  }
+ ]
+}
