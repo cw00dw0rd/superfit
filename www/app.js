@@ -443,9 +443,13 @@ function applySchedule(next, changes) {
   return lines.length ? lines.join('<br>') : 'No changes, you are up to date ✓';
 }
 
+// In the Android (Capacitor) build, native HTTP can read superfit.club directly.
+const isNative = () => !!window.Capacitor?.isNativePlatform?.();
+
 async function runSync() {
   const status = $('#sync-status');
   try {
+    if (!isNative()) throw new TypeError('browser: use the published feed');
     const parsePdf = await getParser();
     const r = await syncSchedule({
       fetchText: async u => { const res = await fetch(u); if (!res.ok) throw new Error(res.status); return res.text(); },
@@ -461,7 +465,7 @@ async function runSync() {
     status.textContent = 'Checking the published schedule…';
     try {
       const feed = await fetch('data/schedule.json', { cache: 'no-store' }).then(r => r.json());
-      if ((feed.generated || '') <= (schedule.generated || '')) { S.lastSync = new Date().toISOString(); save(); renderSettings(); $('#sync-status').innerHTML = `Up to date ✓ (schedule checked ${new Date(feed.generated).toLocaleString()})`; return; }
+      if ((feed.generated || '') <= (schedule.generated || '')) { S.lastSync = new Date().toISOString(); save(); renderSettings(); $('#sync-status').innerHTML = `Up to date ✓ (schedule last changed ${new Date(feed.generated).toLocaleString()}; refreshed daily)`; return; }
       const msg = applySchedule(feed, diffSchedules(schedule, feed));
       renderSettings(); $('#sync-status').innerHTML = `${msg}<br><span class="muted">Source: published schedule from ${new Date(feed.generated).toLocaleString()}</span>`;
     } catch {
