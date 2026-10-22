@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Superfit class finder, agenda, invites and workout tracker. Local-only, no backend.",
   "scripts": {
+    "test": "node tools/test-storage.mjs",
     "serve": "python3 -m http.server 8000 -d www",
     "schedule:sync": "node tools/build-schedule.mjs",
     "schedule:pdf": "node tools/build-schedule.mjs --pdf",

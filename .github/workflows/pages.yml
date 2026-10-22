@@ -20,6 +20,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci
+      - name: Storage compatibility tests (a failure blocks the deploy)
+        run: npm test
       - name: Refresh schedule from superfit.club
         run: node tools/build-schedule.mjs
       - name: Commit schedule if changed

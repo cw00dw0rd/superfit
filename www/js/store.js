@@ -1,0 +1,72 @@
+// On-device data: one JSON object under one localStorage key, kept compatible forever.
+// Rules (see CLAUDE.md, "Data compatibility"):
+//   - STORAGE_KEY never changes.
+//   - Changing the shape of stored data = bump SCHEMA_VERSION + add a migration below.
+//   - Migrations and normalize() only ADD or convert; they never delete user data or unknown fields.
+//   - Every released schema version has a fixture in tools/fixtures/ that tools/test-storage.mjs upgrades.
+// Environment-neutral (browser + Node tests): pass in a Storage-like object.
+
+export const STORAGE_KEY = 'sfp.v1';
+export const SCHEMA_VERSION = 1;
+
+export const DEFAULTS = {
+  prefs: { studios: [], plan: 'all', day: 'all', tod: 'all', q: '', weeklyGoal: 2 },
+  agenda: [], friends: [], log: [], nameFixes: {}, schedule: null, lastSync: null,
+};
+
+// MIGRATIONS[n] upgrades data from version n-1 to n. Append only; never edit a released one.
+const MIGRATIONS = {
+  // v0 = the unversioned format shipped 2026-10-21/22. v1 adds schemaVersion; normalize() fills gaps.
+  1: s => s,
+};
+
+const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
+const arr = v => (Array.isArray(v) ? v : []);
+
+// Additive repair applied on every load: fills missing fields with defaults, keeps everything else.
+export function normalize(s) {
+  const out = { ...s };
+  out.prefs = { ...DEFAULTS.prefs, ...(isObj(s.prefs) ? s.prefs : {}) };
+  out.prefs.studios = arr(out.prefs.studios);
+  for (const k of ['agenda', 'friends', 'log']) out[k] = arr(s[k]);
+  out.nameFixes = isObj(s.nameFixes) ? s.nameFixes : {};
+  if (!('schedule' in out)) out.schedule = null;
+  if (!('lastSync' in out)) out.lastSync = null;
+  out.agenda = out.agenda.map(e => ({ status: 'planned', ...e, friends: arr(e?.friends) }));
+  out.log = out.log.map(l => ({ ...l, friends: arr(l?.friends) }));
+  return out;
+}
+
+// Upgrades any stored object to the current version. Data from a NEWER app version is left as is
+// (only normalized), so an older cached app never strips fields it doesn't understand.
+export function migrate(data) {
+  let s = isObj(data) ? { ...data } : {};
+  const from = Number.isInteger(s.schemaVersion) ? s.schemaVersion : 0;
+  if (from > SCHEMA_VERSION) return { state: normalize(s), from, newer: true };
+  for (let v = from + 1; v <= SCHEMA_VERSION; v++) s = MIGRATIONS[v](s);
+  s.schemaVersion = SCHEMA_VERSION;
+  return { state: normalize(s), from, newer: false };
+}
+
+// Reads state. Before any upgrade, the raw data is copied to `${STORAGE_KEY}.backup.v<from>`.
+// Unreadable data is quarantined to `${STORAGE_KEY}.corrupt.<time>` instead of being overwritten.
+export function load(storage) {
+  let raw = null;
+  try { raw = storage.getItem(STORAGE_KEY); } catch { /* storage unavailable */ }
+  if (!raw) return { state: migrate({}).state, from: SCHEMA_VERSION, fresh: true };
+  let data;
+  try { data = JSON.parse(raw); } catch {
+    try { storage.setItem(`${STORAGE_KEY}.corrupt.${Date.now()}`, raw); } catch { /* full */ }
+    return { state: migrate({}).state, from: SCHEMA_VERSION, corrupt: true };
+  }
+  const r = migrate(data);
+  if (r.from < SCHEMA_VERSION) {
+    const bk = `${STORAGE_KEY}.backup.v${r.from}`;
+    try { if (!storage.getItem(bk)) storage.setItem(bk, raw); } catch { /* full: upgrade anyway, data is kept */ }
+  }
+  return r;
+}
+
+export function save(storage, state) {
+  storage.setItem(STORAGE_KEY, JSON.stringify(state));
+}

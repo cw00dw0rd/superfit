@@ -53,12 +53,24 @@ npm run glyphs:verify -- tools/labels-<x>.json path/to/new.pdf
 
 The plan PDFs themselves live on Webflow's CDN, which *does* allow cross-origin reads. Only discovering new PDF links needs the crawl.
 
+## Your data is safe across updates
+
+Everything you record (agenda, friends, workouts, settings) stays on your phone and survives app updates:
+
+- Stored data carries a schema version; `www/js/store.js` upgrades older data step by step and never drops fields.
+- Before an upgrade, the original is copied to a backup key on the device; unreadable data is set aside, never overwritten.
+- `npm test` (`tools/test-storage.mjs`) upgrades saved data from every released version (`tools/fixtures/`) and fails if anything is lost. CI runs it on every push and before every deploy.
+- Rules for contributors are in [`CLAUDE.md`](CLAUDE.md#data-compatibility-mandatory).
+
+Keep the same address (https://cw00dw0rd.github.io/superfit/): browsers tie saved data to the site address. Settings → Export backup lets you move data to a new phone or browser.
+
 ## Seeding/refreshing the bundled schedule
 
 ```sh
 npm run schedule:sync                                 # crawl superfit.club (behind a proxy: NODE_USE_ENV_PROXY=1)
 npm run schedule:pdf -- mitte KP_MI.pdf TT_MI.pdf     # or add one studio from local PDFs
 npm run test:sync -- KP.pdf TT.pdf                    # offline test of crawler + change detection
+npm test                                              # storage compatibility tests (also in CI)
 ```
 
 ## Layout

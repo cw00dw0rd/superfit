@@ -1,4 +1,5 @@
 import { syncSchedule, toClasses, diffSchedules } from './js/sync.js';
+import * as store from './js/store.js';
 
 // ---------- helpers ----------
 const $ = s => document.querySelector(s);
@@ -23,16 +24,12 @@ function toast(msg) {
   clearTimeout(toast.timer); toast.timer = setTimeout(() => (t.hidden = true), 2600);
 }
 
-// ---------- state (all local) ----------
-const KEY = 'sfp.v1';
-const defaults = {
-  prefs: { studios: [], plan: 'all', day: 'all', tod: 'all', q: '', weeklyGoal: 2 },
-  agenda: [], friends: [], log: [], nameFixes: {}, schedule: null, lastSync: null,
-};
-let S;
-try { S = { ...defaults, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch { S = structuredClone(defaults); }
-S.prefs = { ...defaults.prefs, ...S.prefs };
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('Could not save: storage full?'); } };
+// ---------- state (all local; versioned and migrated by js/store.js) ----------
+const loaded = store.load(localStorage);
+let S = loaded.state;
+const save = () => { try { store.save(localStorage, S); } catch (e) { toast('Could not save: storage full?'); } };
+// Persist an upgrade right away (the original was already backed up by store.load).
+if (!loaded.fresh && !loaded.corrupt && !loaded.newer && loaded.from < store.SCHEMA_VERSION) save();
 
 let schedule = { studios: [], classes: [] };
 let info = [];
@@ -608,13 +605,16 @@ async function importBackup(file) {
   try {
     const data = JSON.parse(await file.text());
     if (!Array.isArray(data.agenda) || !Array.isArray(data.friends)) throw new Error('Not a Superfit Planner backup');
-    S = { ...S, ...data, prefs: { ...defaults.prefs, ...data.prefs } }; save(); toast('Backup restored'); render();
+    // Backups from any app version are upgraded the same way as stored data.
+    S = store.migrate({ ...S, ...data }).state; save(); toast('Backup restored'); render();
   } catch (e) { toast(e.message); }
 }
 
 // ---------- boot ----------
 await loadData();
 render();
+if (loaded.corrupt) toast('Saved data could not be read; a copy was kept. Restore a backup in Settings.');
+else if (loaded.newer) toast('This data is from a newer app version. Reload to update the app.');
 // Ask the browser not to evict our local data (matters most on iPhone).
 navigator.storage?.persist?.().catch(() => {});
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
