@@ -21,9 +21,13 @@ export function readStudioPage(html) {
   const maps = (html.match(/href="(https:\/\/(?:www\.google\.[a-z.]+\/maps|maps\.google\.[a-z.]+|goo\.gl\/maps|maps\.app\.goo\.gl)[^"]*)"/i) || [])[1];
   const text = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
   const addr = text.match(/([A-ZÄÖÜ][\p{L}.\-]*(?:straße|strasse|str\.|allee|platz|damm|weg|ufer|ring|chaussee|markt|tor|brücke|gasse|zeile|promenade)\s\d+[a-z]?(?:\s?-\s?\d+[a-z]?)?),?\s+(\d{5})\s+Berlin/u);
+  // Studio pages are titled "SUPERFIT | Mitte | Grunerstr. 20, 10179 Berlin".
+  const title = (html.match(/<title>([^<]*)<\/title>/i) || [])[1]?.split('|').map(t => decode(t).trim()) || [];
+  const titleAddr = title.find(t => /\d{5}/.test(t));
   return {
+    name: title.length >= 3 ? title[1] : '',
     pdfs: [...pdfs].map(u => (u.startsWith('http') ? u : SITE + u)),
-    address: addr ? `${addr[1].trim()}, ${addr[2]} Berlin` : '',
+    address: titleAddr || (addr ? `${addr[1].trim()}, ${addr[2]} Berlin` : ''),
     mapsUrl: maps ? decode(maps) : '',
   };
 }
@@ -61,7 +65,7 @@ export async function syncSchedule({ fetchText, fetchBytes, parsePdf, previous, 
     try { page = readStudioPage(await fetchText(link.url)); }
     catch (e) { changes.push({ studio: link.name, kind: 'error', msg: `page failed: ${e.message}` }); if (old) { studios.push(old); classes.push(...prevClasses.filter(c => c.studio === link.id)); } continue; }
 
-    const studio = { ...old, ...link, address: page.address || old?.address || '', mapsUrl: page.mapsUrl || old?.mapsUrl || '', plans: {}, ignoredPdfs: [] };
+    const studio = { ...old, ...link, name: page.name || old?.name || link.name, address: page.address || old?.address || '', mapsUrl: page.mapsUrl || old?.mapsUrl || '', plans: {}, ignoredPdfs: [] };
     for (const url of page.pdfs) {
       const known = Object.entries(old?.plans || {}).find(([, p]) => p.pdf === url);
       if (known && !force) {
@@ -88,4 +92,24 @@ export async function syncSchedule({ fetchText, fetchBytes, parsePdf, previous, 
     studios.push(studio);
   }
   return { schedule: { generated: new Date().toISOString(), source: OVERVIEW_URL, studios, classes }, changes };
+}
+
+// Compares two schedules (e.g. the device copy vs. the published feed), same change format as syncSchedule.
+export function diffSchedules(prev, next) {
+  const key = c => `${c.day} ${c.start} ${c.name}`;
+  const changes = [];
+  const prevStudios = Object.fromEntries((prev?.studios || []).map(s => [s.id, s]));
+  for (const st of next.studios) {
+    const old = prevStudios[st.id];
+    for (const [plan, p] of Object.entries(st.plans || {})) {
+      const before = (prev?.classes || []).filter(c => c.studio === st.id && c.plan === plan);
+      const after = next.classes.filter(c => c.studio === st.id && c.plan === plan);
+      const added = after.filter(c => !before.some(b => key(b) === key(c)));
+      const removed = before.filter(b => !after.some(c => key(b) === key(c)));
+      if (!old?.plans?.[plan] || added.length || removed.length)
+        changes.push({ studio: st.name, plan, kind: old?.plans?.[plan] ? 'updated' : 'new', validFrom: p.validFrom, added, removed, unknown: p.unknownGlyphs });
+    }
+    for (const plan of Object.keys(old?.plans || {})) if (!st.plans?.[plan]) changes.push({ studio: st.name, plan, kind: 'removed', added: [], removed: [] });
+  }
+  return changes;
 }

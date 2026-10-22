@@ -135,9 +135,12 @@ export async function parseSchedulePdf(pdfjs, data, protos = []) {
       const row = rows.find(r => Math.abs(r.y - p.y0) < 2.5);
       if (row) row.g.push(p); else rows.push({ y: p.y0, g: [p] });
     }
-    const name = readBand(rows[0]?.g || [], protos, unknown);
+    // Some tiles have the class name as real text ("FUNCTIONAL") below the glyph rows.
+    const textNames = labels.filter(i => !rows.length || i.y < rows[0].y - 3);
+    if (textNames.length) rows.unshift(null);
+    const name = textNames.length ? { text: textNames.map(i => i.s.toUpperCase()).join(' '), sigs: [] } : readBand(rows[0]?.g || [], protos, unknown);
     const brand = readBand(rows[1]?.g || [], protos, unknown);
-    const tags = labels.map(i => i.s.toUpperCase());
+    const tags = labels.filter(i => !textNames.includes(i)).map(i => i.s.toUpperCase());
     const pad = s => s.padStart(2, '0');
     classes.push({
       day: colOf(t.x),

@@ -44,5 +44,10 @@ if (args[0] === '--pdf') {
   report(r.changes);
   schedule = r.schedule;
 }
-fs.writeFileSync(out, JSON.stringify(schedule, null, 1));
-console.log(`${schedule.studios.length} studios, ${schedule.classes.length} classes -> www/data/schedule.json`);
+// Keep the old timestamp (and file) when nothing but the timestamp would change.
+const same = JSON.stringify({ ...schedule, generated: 0 }) === JSON.stringify({ ...previous, generated: 0 });
+if (same) console.log('No changes.');
+else {
+  fs.writeFileSync(out, JSON.stringify(schedule, null, 1));
+  console.log(`${schedule.studios.length} studios, ${schedule.classes.length} classes -> www/data/schedule.json`);
+}

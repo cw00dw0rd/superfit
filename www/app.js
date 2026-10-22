@@ -1,4 +1,4 @@
-import { syncSchedule, toClasses } from './js/sync.js';
+import { syncSchedule, toClasses, diffSchedules } from './js/sync.js';
 
 // ---------- helpers ----------
 const $ = s => document.querySelector(s);
@@ -50,7 +50,7 @@ async function loadData() {
 }
 
 function classInfo(c) {
-  const name = fullName(c).toUpperCase();
+  const name = `${c.brand || ''} ${fullName(c)}`.toUpperCase();
   return info.find(e => e.keys.some(k => new RegExp(`(^|[^A-ZÄÖÜ])${k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(name))) || null;
 }
 
@@ -194,7 +194,7 @@ function openClass(id) {
   const dots = n => '●'.repeat(n) + '○'.repeat(5 - n);
   modal(`
     <h3>${h(fullName(c))}</h3>
-    <div class="muted">${h(brandLabel(c.brand))} · <span class="badge ${c.plan === 'team' ? 'team' : ''}">${PLAN_LABEL[c.plan]}</span></div>
+    <div class="muted">${c.brand ? h(brandLabel(c.brand)) + ' · ' : ''}<span class="badge ${c.plan === 'team' ? 'team' : ''}">${PLAN_LABEL[c.plan]}</span></div>
     <p><b>${DAYS_LONG[c.day - 1]} ${c.start}–${c.end}</b><br>Superfit ${h(st.name)}${st.address ? ' · ' + h(st.address) : ''}</p>
     ${ci ? `<div class="card">
       <div class="row between"><b>${h(ci.title)}</b><span class="small" title="Intensity">${dots(ci.intensity)}</span></div>
@@ -202,6 +202,7 @@ function openClass(id) {
       <div class="small muted">${ci.focus.map(h).join(' · ')}${ci.duration ? ' · ' + h(ci.duration) : ''}</div>
       ${ci.bring ? `<p class="small"><b>Bring:</b> ${h(ci.bring)}</p>` : ''}
       ${ci.tip ? `<p class="small"><b>Tip:</b> ${h(ci.tip)}</p>` : ''}
+      ${ci.source ? `<a class="small" href="${h(ci.source)}" target="_blank" rel="noopener">More about this class ↗</a>` : ''}
     </div>` : ''}
     <label>Date</label>
     <select id="class-date">${dates.map(d => `<option value="${d}">${fmtDate(d)}</option>`).join('')}</select>
@@ -454,10 +455,18 @@ async function runSync() {
     const msg = applySchedule(r.schedule, r.changes);
     renderSettings(); $('#sync-status').innerHTML = msg;
   } catch (e) {
-    const cors = e instanceof TypeError;
-    status.innerHTML = cors
-      ? `Couldn't reach superfit.club from the browser (the site blocks cross-site requests). The Android app build can check directly. Here, open a studio page on <a href="https://superfit.club/studios-ubersicht" target="_blank" rel="noopener">superfit.club</a>, download the plan PDFs, then use “Import plan PDFs”.`
-      : `Update failed: ${h(e.message)}`;
+    if (!(e instanceof TypeError)) { status.innerHTML = `Update failed: ${h(e.message)}`; return; }
+    // Browsers can't read superfit.club pages (CORS), so use the schedule feed published
+    // next to this app (refreshed daily by the GitHub Action).
+    status.textContent = 'Checking the published schedule…';
+    try {
+      const feed = await fetch('data/schedule.json', { cache: 'no-store' }).then(r => r.json());
+      if ((feed.generated || '') <= (schedule.generated || '')) { S.lastSync = new Date().toISOString(); save(); renderSettings(); $('#sync-status').innerHTML = `Up to date ✓ (schedule checked ${new Date(feed.generated).toLocaleString()})`; return; }
+      const msg = applySchedule(feed, diffSchedules(schedule, feed));
+      renderSettings(); $('#sync-status').innerHTML = `${msg}<br><span class="muted">Source: published schedule from ${new Date(feed.generated).toLocaleString()}</span>`;
+    } catch {
+      status.innerHTML = `Couldn't check for updates (offline?). You can also download plan PDFs from <a href="https://superfit.club/studios-ubersicht" target="_blank" rel="noopener">superfit.club</a> and use “Import plan PDFs”.`;
+    }
   }
 }
 
@@ -602,4 +611,6 @@ async function importBackup(file) {
 // ---------- boot ----------
 await loadData();
 render();
+// Ask the browser not to evict our local data (matters most on iPhone).
+navigator.storage?.persist?.().catch(() => {});
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});

@@ -24,7 +24,7 @@ not text. `www/js/pdfparse.js` gets the drawing operations through pdf.js and fi
 groups the glyph outlines above that text into rows (bottom row = class name, next row = brand) and matches every glyph
 against the prototypes in `www/data/glyphs.json`. In effect it's a tiny OCR that runs entirely on the device.
 
-It was trained on the Mitte plans from 01.10.2026 and reads all 99 classes correctly. Trained on the Kursplan alone, it also read the unseen
+It was trained on the Mitte plans from 01.10.2026 (99/99 classes correct) and now reads all 12 studios' plans (960 classes) with no unknown glyphs. Trained on the Kursplan alone, it also read the unseen
 Teamtraining names. If a future plan uses a letter it has never seen, that name shows a `?`. You can fix it under
 Settings (the fix is remembered), or retrain:
 
@@ -39,19 +39,24 @@ npm run glyphs:verify -- tools/labels-<x>.json path/to/new.pdf
 | Target | How |
 | --- | --- |
 | **Try locally** | `npm run serve`, then open http://localhost:8000 |
-| **Android app (APK)** | Push to GitHub. The *Build Android APK* workflow uploads `app-debug.apk` as an artifact. Install it on the phone (allow "install unknown apps"). Locally: `npm run android:sync && npm run android:open` (needs Android Studio). |
-| **iPhone / any browser** | The *Deploy web app* workflow publishes `www/` to GitHub Pages. Open it in Safari, then Share → Add to Home Screen. |
+| **Web (Android + iPhone)** | Push to GitHub and enable Pages (Settings → Pages → Source: GitHub Actions). The *Publish web app* workflow deploys `www/`. Open the URL, then **Android (Chrome):** ⋮ → *Install app* / *Add to Home screen*. **iPhone (Safari):** Share → *Add to Home Screen*. |
+| **Android app (APK, optional)** | The *Build Android APK* workflow uploads `app-debug.apk` as an artifact. Locally: `npm run android:sync && cd android && ./gradlew assembleDebug` (needs the Android SDK). |
 
-**Why the Android build matters:** browsers block a web page from fetching superfit.club (CORS), so on the web
-version the update button falls back to "Import plan PDFs". The Android build uses Capacitor's native HTTP
-(`CapacitorHttp` in `capacitor.config.json`), which isn't subject to CORS, so the button works there.
-The optional *Refresh schedule* workflow re-crawls weekly and commits `www/data/schedule.json`, which keeps the web/iPhone
-version current too.
+### How "Check for updates" works
+
+1. It tries to crawl superfit.club directly: read the studio overview and studio pages, and re-parse only PDFs whose URL changed.
+   This works in the Android APK, where Capacitor's native HTTP is not subject to browser CORS rules.
+2. Browsers can't read superfit.club pages (the site sends no CORS header), so the web/iPhone app falls back to the
+   **schedule feed**: `data/schedule.json` published next to the app. The *Publish web app* workflow re-crawls superfit.club
+   **every day** (04:17 UTC), commits the schedule if anything changed and redeploys. The app shows what was added or removed.
+3. Manual fallback: "Import plan PDFs" parses PDFs you've downloaded.
+
+The plan PDFs themselves live on Webflow's CDN, which *does* allow cross-origin reads. Only discovering new PDF links needs the crawl.
 
 ## Seeding/refreshing the bundled schedule
 
 ```sh
-npm run schedule:sync                                 # crawl superfit.club (needs network access to it)
+npm run schedule:sync                                 # crawl superfit.club (behind a proxy: NODE_USE_ENV_PROXY=1)
 npm run schedule:pdf -- mitte KP_MI.pdf TT_MI.pdf     # or add one studio from local PDFs
 npm run test:sync -- KP.pdf TT.pdf                    # offline test of crawler + change detection
 ```
