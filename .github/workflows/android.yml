@@ -1,9 +1,7 @@
 name: Build Android APK
+# Manual for now (Actions tab -> Build Android APK -> Run workflow); the web app is the main target.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: ['www/**', 'capacitor.config.json', 'package*.json', '.github/workflows/android.yml']
 jobs:
   apk:
     runs-on: ubuntu-latest

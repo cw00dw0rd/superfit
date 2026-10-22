@@ -40,7 +40,7 @@ npm run glyphs:verify -- tools/labels-<x>.json path/to/new.pdf
 | --- | --- |
 | **Try locally** | `npm run serve`, then open http://localhost:8000 |
 | **Web (Android + iPhone)** | Push to GitHub and enable Pages (Settings → Pages → Source: GitHub Actions). The *Publish web app* workflow deploys `www/`. Open the URL, then **Android (Chrome):** ⋮ → *Install app* / *Add to Home screen*. **iPhone (Safari):** Share → *Add to Home Screen*. |
-| **Android app (APK, optional)** | The *Build Android APK* workflow uploads `app-debug.apk` as an artifact. Locally: `npm run android:sync && cd android && ./gradlew assembleDebug` (needs the Android SDK). |
+| **Android app (APK, optional)** | Run the *Build Android APK* workflow manually (Actions tab). It uploads `app-debug.apk` as an artifact. Locally: `npm run android:sync && cd android && ./gradlew assembleDebug` (needs the Android SDK). |
 
 ### How "Check for updates" works
 
