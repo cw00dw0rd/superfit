@@ -1,0 +1,35 @@
+# Publishes the web app to GitHub Pages and keeps its schedule feed fresh:
+# every day it re-crawls superfit.club (only changed PDFs are re-parsed), commits
+# www/data/schedule.json if anything changed, and redeploys. The app's
+# "Check for updates" button reads that feed when it can't reach superfit.club directly.
+name: Publish web app
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['www/**']
+  schedule: [{ cron: '17 4 * * *' }]
+permissions: { contents: write, pages: write, id-token: write }
+concurrency: { group: pages, cancel-in-progress: false }
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: { name: github-pages, url: '${{ steps.deploy.outputs.page_url }}' }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Refresh schedule from superfit.club
+        run: node tools/build-schedule.mjs
+      - name: Commit schedule if changed
+        run: |
+          if git diff --quiet -- www/data/schedule.json; then echo "No schedule changes"; exit 0; fi
+          git config user.name "schedule-bot"
+          git config user.email "schedule-bot@users.noreply.github.com"
+          git add www/data/schedule.json && git commit -m "Refresh schedule" && git push
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: www }
+      - id: deploy
+        uses: actions/deploy-pages@v4

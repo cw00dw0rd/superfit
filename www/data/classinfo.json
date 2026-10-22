@@ -1,0 +1,588 @@
+{
+ "_note": "Matched against \"<brand> <class name>\" (case-insensitive, word start). First match wins, so specific entries come before general ones. \"source\" is shown as a link in the app.",
+ "entries": [
+  {
+   "keys": [
+    "BODYPUMP HEAVY"
+   ],
+   "title": "BODYPUMP™ HEAVY",
+   "brand": "Les Mills",
+   "intensity": 4,
+   "focus": [
+    "Strength"
+   ],
+   "what": "Tempo-based barbell strength class: heavier weights, slower lifts, sets of about 8 reps and longer rests than regular BODYPUMP. Low impact.",
+   "bring": "Towel, water. Barbell and plates are provided.",
+   "tip": "Learn the moves in regular BODYPUMP first, then go heavier here.",
+   "source": "https://www.ymcapkc.org/node/1221573"
+  },
+  {
+   "keys": [
+    "BODYPUMP"
+   ],
+   "title": "BODYPUMP™",
+   "brand": "Les Mills",
+   "intensity": 3,
+   "focus": [
+    "Strength",
+    "Endurance"
+   ],
+   "what": "The original barbell class: light-to-moderate weights, lots of reps, a full-body track list (squats, chest, back, triceps, biceps, lunges, shoulders, core). Superfit calls it its ultimate barbell programme for strengthening and toning the whole body.",
+   "bring": "Towel, water. Barbell, plates and step are provided.",
+   "tip": "Start lighter than you think, because the high rep count adds up.",
+   "source": "https://superfit.club/kurse/bodypump"
+  },
+  {
+   "keys": [
+    "BODYCOMBAT"
+   ],
+   "title": "BODYCOMBAT™",
+   "brand": "Les Mills",
+   "intensity": 4,
+   "focus": [
+    "Cardio",
+    "Martial arts"
+   ],
+   "what": "Non-contact martial-arts cardio with punches and kicks drawn from karate, kickboxing, taekwondo, tai chi and muay thai. Builds fitness, endurance and power, and Superfit pitches it as a stress reliever.",
+   "bring": "Towel, water, cushioned trainers.",
+   "tip": "Learn the moves at low impact first, then add power.",
+   "source": "https://superfit.club/kurse/bodycombat"
+  },
+  {
+   "keys": [
+    "BODYATTACK EXPRESS"
+   ],
+   "title": "BODYATTACK™ Express",
+   "brand": "Les Mills",
+   "intensity": 4,
+   "focus": [
+    "Cardio",
+    "HIIT"
+   ],
+   "what": "25-minute version of BODYATTACK: athletic aerobic moves combined with strength and stabilisation work.",
+   "bring": "Towel, water.",
+   "tip": "",
+   "source": "https://superfit.club/kurse/bodyattack-express"
+  },
+  {
+   "keys": [
+    "BODYATTACK"
+   ],
+   "title": "BODYATTACK™",
+   "brand": "Les Mills",
+   "intensity": 4,
+   "focus": [
+    "Cardio",
+    "Athletic"
+   ],
+   "what": "Sports-inspired cardio interval class. Simple athletic moves (running, lunging, jumping) plus strength and stabilisation build endurance, speed and agility. Low-impact options are shown for every track.",
+   "bring": "Towel, water, good trainers.",
+   "tip": "",
+   "source": "https://superfit.club/kurse/bodyattack"
+  },
+  {
+   "keys": [
+    "BODYBALANCE EXPRESS"
+   ],
+   "title": "BODYBALANCE™ Express",
+   "brand": "Les Mills",
+   "intensity": 1,
+   "focus": [
+    "Mobility",
+    "Mind & body"
+   ],
+   "what": "25-minute BODYBALANCE: stretching, gentle strengthening and a short relaxation.",
+   "bring": "Comfortable clothes.",
+   "tip": "",
+   "source": "https://superfit.club/kurse/bodybalance-express"
+  },
+  {
+   "keys": [
+    "BODYBALANCE",
+    "BODYFLOW"
+   ],
+   "title": "BODYBALANCE™",
+   "brand": "Les Mills",
+   "intensity": 1,
+   "focus": [
+    "Mobility",
+    "Mind & body",
+    "Core"
+   ],
+   "what": "Yoga, Pilates and tai chi linked into flowing sequences. A gentle workout for the deep core muscles, flexibility and back health, ending in relaxation.",
+   "bring": "Comfortable clothes, usually barefoot.",
+   "tip": "A good recovery session between harder days.",
+   "source": "https://superfit.club/kurse/bodybalance"
+  },
+  {
+   "keys": [
+    "LMISTEP",
+    "LMI STEP",
+    "LES MILLS STEP",
+    "BODYSTEP"
+   ],
+   "title": "LES MILLS STEP / BODYSTEP™",
+   "brand": "Les Mills",
+   "intensity": 3,
+   "focus": [
+    "Cardio",
+    "Legs"
+   ],
+   "what": "Choreographed step workout on an adjustable step: cardio blocks to burn fat plus strength tracks to tone the legs and glutes. (\"LMI Step\" is how Superfit lists it.)",
+   "bring": "Towel, water, trainers.",
+   "tip": "Keep the step low until the choreography feels easy.",
+   "source": "https://superfit.club/kurse/lmi-step"
+  },
+  {
+   "keys": [
+    "BODYJAM"
+   ],
+   "title": "BODYJAM™",
+   "brand": "Les Mills",
+   "intensity": 3,
+   "focus": [
+    "Dance",
+    "Cardio"
+   ],
+   "what": "Dance workout to the latest club sounds: hip hop, Latin, house. Lots of fun, improves coordination, and you burn calories almost without noticing.",
+   "bring": "Trainers, water.",
+   "tip": "Choreography repeats, so it clicks by the second or third time.",
+   "source": "https://superfit.club/kurse/bodyjam"
+  },
+  {
+   "keys": [
+    "GRIT"
+   ],
+   "title": "LES MILLS GRIT™",
+   "brand": "Les Mills",
+   "intensity": 5,
+   "focus": [
+    "HIIT"
+   ],
+   "what": "About 30 minutes of high-intensity interval training (Strength, Cardio or Athletic formats) with short all-out efforts.",
+   "bring": "Towel, water.",
+   "tip": "Max effort in short bursts; rest is part of the plan.",
+   "source": "https://www.lesmills.com/workouts/"
+  },
+  {
+   "keys": [
+    "SHAPES"
+   ],
+   "title": "LES MILLS SHAPES™",
+   "brand": "Les Mills",
+   "intensity": 2,
+   "focus": [
+    "Toning",
+    "Core",
+    "Mobility"
+   ],
+   "what": "Pilates, barre and power yoga to modern music. Small, controlled moves build core strength, posture and stability (Pilates), the barre \"burn\" tones the major muscle groups, and athletic yoga adds stability. Low impact, about 45 minutes.",
+   "bring": "A mat (usually provided), comfortable clothes. Sometimes bands are used.",
+   "tip": "Expect a strong burn, not a stretch class.",
+   "source": "https://www.lesmills.com/uk/articles/shapes-in-numbers"
+  },
+  {
+   "keys": [
+    "LESMILLS PILATES",
+    "LES MILLS PILATES"
+   ],
+   "title": "LES MILLS PILATES",
+   "brand": "Les Mills",
+   "intensity": 2,
+   "focus": [
+    "Core",
+    "Posture",
+    "Mobility"
+   ],
+   "what": "Mat Pilates set to music: slow, controlled bodyweight moves for strength, mobility and balance. No equipment beyond a mat, with options for every level.",
+   "bring": "Comfortable clothes.",
+   "tip": "",
+   "source": "https://www.lesmills.com.au/clubs-and-facilities/our-workouts/innovation/les-mills-pilates/"
+  },
+  {
+   "keys": [
+    "LESMILLS YOGA",
+    "LES MILLS YOGA"
+   ],
+   "title": "LES MILLS YOGA",
+   "brand": "Les Mills",
+   "intensity": 1,
+   "focus": [
+    "Mobility",
+    "Mind & body"
+   ],
+   "what": "Les Mills yoga series (formats include Yin, Hatha and Vinyasa): traditional practice with modern guidance and music. 45 minutes.",
+   "bring": "Comfortable clothes.",
+   "tip": "",
+   "source": "https://www.lesmills.com/workouts/les-mills-yoga"
+  },
+  {
+   "keys": [
+    "CORE",
+    "CXWORX"
+   ],
+   "title": "LES MILLS CORE™",
+   "brand": "Les Mills",
+   "intensity": 3,
+   "focus": [
+    "Core",
+    "Strength"
+   ],
+   "what": "Short, intense core session with bands, plates and bodyweight: abs, obliques, glutes and lower back.",
+   "bring": "Towel, water.",
+   "tip": "Pairs well right after a cardio class.",
+   "source": "https://www.lesmills.com/workouts/"
+  },
+  {
+   "keys": [
+    "DANCE"
+   ],
+   "title": "LES MILLS DANCE™",
+   "brand": "Les Mills",
+   "intensity": 3,
+   "focus": [
+    "Dance",
+    "Cardio"
+   ],
+   "what": "Dance workout to current hits, with the styles changing every release. The aim is energy, not perfect technique.",
+   "bring": "Trainers, water.",
+   "tip": "",
+   "source": "https://www.lesmills.com/workouts/"
+  },
+  {
+   "keys": [
+    "AFROLETICS"
+   ],
+   "title": "Afroletics®",
+   "brand": "Afroletics",
+   "intensity": 3,
+   "focus": [
+    "Dance",
+    "Functional"
+   ],
+   "what": "High-energy dance fitness that mixes African-inspired movement with strength, endurance and rhythm work. Suitable for different fitness levels.",
+   "bring": "Trainers, water.",
+   "tip": "",
+   "source": "https://fragfitty.de/en/articles/fibo-2026-isaac-kyere-gmbh"
+  },
+  {
+   "keys": [
+    "SALSATION"
+   ],
+   "title": "SALSATION®",
+   "brand": "Salsation Fitness",
+   "intensity": 3,
+   "focus": [
+    "Dance",
+    "Functional"
+   ],
+   "what": "Dance fitness built on salsa, bachata, samba, flamenco and more, with functional movements worked into the choreography. More free interpretation than Zumba, and no dance experience needed.",
+   "bring": "Trainers, water.",
+   "tip": "",
+   "source": "https://kartamultisport.pl/en/article/salsation-take-care-of-your-mood-and-fitness-with-your-favourite-rhythm"
+  },
+  {
+   "keys": [
+    "ROCKOUT",
+    "POUND"
+   ],
+   "title": "POUND® Rockout Workout",
+   "brand": "POUND",
+   "intensity": 3,
+   "focus": [
+    "Cardio",
+    "Conditioning"
+   ],
+   "what": "Drumming workout with lightly weighted drumsticks (Ripstix): cardio, conditioning and strength mixed with Pilates- and yoga-inspired moves. About 45 minutes.",
+   "bring": "Water. A mat may help; sticks are usually provided.",
+   "tip": "",
+   "source": "https://poundfit.com/?p=68779"
+  },
+  {
+   "keys": [
+    "ZUMBA"
+   ],
+   "title": "Zumba®",
+   "brand": "Zumba Fitness",
+   "intensity": 3,
+   "focus": [
+    "Dance",
+    "Cardio"
+   ],
+   "what": "Latin-inspired dance fitness (salsa, merengue, reggaeton…) as a party-style cardio workout.",
+   "bring": "Trainers, water.",
+   "tip": "",
+   "source": "https://www.zumba.com/"
+  },
+  {
+   "keys": [
+    "YOGA"
+   ],
+   "title": "Yoga",
+   "brand": "Superfit",
+   "intensity": 1,
+   "focus": [
+    "Mobility",
+    "Mind & body"
+   ],
+   "what": "Superfit yoga class: postures and breathing for flexibility, strength and relaxation. \"Express\" sessions are shorter.",
+   "bring": "Comfortable clothes. Mats are usually provided.",
+   "tip": "",
+   "source": ""
+  },
+  {
+   "keys": [
+    "PILATES"
+   ],
+   "title": "Pilates",
+   "brand": "Superfit",
+   "intensity": 2,
+   "focus": [
+    "Core",
+    "Posture"
+   ],
+   "what": "Mat Pilates: controlled core and stability work with a focus on breathing and posture.",
+   "bring": "Comfortable clothes.",
+   "tip": "",
+   "source": ""
+  },
+  {
+   "keys": [
+    "BAUCH BEINE PO",
+    "BBP"
+   ],
+   "title": "Bauch Beine Po (abs, legs, glutes)",
+   "brand": "Superfit",
+   "intensity": 2,
+   "focus": [
+    "Toning"
+   ],
+   "what": "Classic toning class for abs, legs and glutes with bodyweight, bands and light weights.",
+   "bring": "Towel, water.",
+   "tip": "",
+   "source": ""
+  },
+  {
+   "keys": [
+    "BAUCH"
+   ],
+   "title": "Bauch (abs)",
+   "brand": "Superfit",
+   "intensity": 3,
+   "focus": [
+    "Core"
+   ],
+   "what": "Intense 20-minute coached abs workout on the training floor (\"Bauch Express\" in the Kursplan is the same idea). Simple exercises, solid results.",
+   "bring": "Towel.",
+   "tip": "Easy to add on after another workout.",
+   "source": "https://superfit.club/kurse/bauch"
+  },
+  {
+   "keys": [
+    "BEINE UND PO",
+    "PO"
+   ],
+   "title": "Po / Beine und Po (glutes & legs)",
+   "brand": "Superfit",
+   "intensity": 3,
+   "focus": [
+    "Glutes",
+    "Legs"
+   ],
+   "what": "Coached glute and leg workout on the training floor with targeted exercises to shape and firm.",
+   "bring": "Towel.",
+   "tip": "",
+   "source": "https://superfit.club/kurse/po"
+  },
+  {
+   "keys": [
+    "RÜCKEN",
+    "RUECKEN"
+   ],
+   "title": "Rücken (back)",
+   "brand": "Superfit",
+   "intensity": 1,
+   "focus": [
+    "Back health",
+    "Core"
+   ],
+   "what": "Simple, effective back workout: balanced exercises strengthen the trunk muscles and improve posture.",
+   "bring": "Comfortable clothes.",
+   "tip": "",
+   "source": "https://superfit.club/kurse/rucken"
+  },
+  {
+   "keys": [
+    "STRETCH"
+   ],
+   "title": "Stretch",
+   "brand": "Superfit",
+   "intensity": 1,
+   "focus": [
+    "Mobility",
+    "Recovery"
+   ],
+   "what": "10-minute full-body flexibility session with targeted stretches. A perfect cool-down after any workout.",
+   "bring": "Nothing needed.",
+   "tip": "Stack it right after a class.",
+   "source": "https://superfit.club/kurse/stretch"
+  },
+  {
+   "keys": [
+    "MOBILITY"
+   ],
+   "title": "Mobility",
+   "brand": "Superfit",
+   "intensity": 1,
+   "focus": [
+    "Mobility"
+   ],
+   "what": "Short coached session with joint mobility and active stretching for hips, spine and shoulders.",
+   "bring": "Comfortable clothes.",
+   "tip": "",
+   "source": ""
+  },
+  {
+   "keys": [
+    "FASZIEN"
+   ],
+   "title": "Faszientraining (fascia)",
+   "brand": "Superfit",
+   "intensity": 1,
+   "focus": [
+    "Recovery",
+    "Mobility"
+   ],
+   "what": "Team session with foam rollers and fascia balls to make tissue more elastic and release adhesions. Improves mobility, training results and wellbeing.",
+   "bring": "Comfortable clothes.",
+   "tip": "",
+   "source": "https://superfit.club/kurse/faszientrainning"
+  },
+  {
+   "keys": [
+    "FULLBODY",
+    "FULL BODY"
+   ],
+   "title": "FullBody Workout",
+   "brand": "Superfit",
+   "intensity": 3,
+   "focus": [
+    "Strength",
+    "Conditioning"
+   ],
+   "what": "20-minute coached team workout on the training floor with hand-picked full-body exercises for legs, upper body and abs. Built for when you are short on time.",
+   "bring": "Towel, water.",
+   "tip": "",
+   "source": "https://superfit.club/kurse/fullbody-workout"
+  },
+  {
+   "keys": [
+    "OBERKÖRPER",
+    "OBERKOERPER"
+   ],
+   "title": "Oberkörper (upper body)",
+   "brand": "Superfit",
+   "intensity": 3,
+   "focus": [
+    "Strength"
+   ],
+   "what": "Short coached upper-body session on the training floor: push, pull and shoulder work.",
+   "bring": "Towel, water.",
+   "tip": "",
+   "source": ""
+  },
+  {
+   "keys": [
+    "CIRCUIT"
+   ],
+   "title": "Circuit",
+   "brand": "Superfit",
+   "intensity": 4,
+   "focus": [
+    "Conditioning",
+    "Strength"
+   ],
+   "what": "Women-only circuit with at least 10 stations: a 15-minute full-body session that emphasises the cardio effect of strength training.",
+   "bring": "Towel, water.",
+   "tip": "Sessions marked WOMEN are women-only.",
+   "source": "https://superfit.club/kurse/circuit"
+  },
+  {
+   "keys": [
+    "HIIT"
+   ],
+   "title": "HIIT",
+   "brand": "Superfit",
+   "intensity": 4,
+   "focus": [
+    "HIIT"
+   ],
+   "what": "20 minutes of coached bodyweight interval training to burn calories and build endurance fast.",
+   "bring": "Towel, water.",
+   "tip": "",
+   "source": "https://superfit.club/kurse/hiit"
+  },
+  {
+   "keys": [
+    "TRX"
+   ],
+   "title": "TRX® Suspension Training",
+   "brand": "Superfit",
+   "intensity": 3,
+   "focus": [
+    "Strength",
+    "Core"
+   ],
+   "what": "Fast, functional full-body workout in small teams using suspension straps, gravity and your own bodyweight. A few exercises work many muscle groups at once.",
+   "bring": "Towel, water.",
+   "tip": "Step your feet back to make it easier and forward to make it harder.",
+   "source": "https://superfit.club/kurse/trx"
+  },
+  {
+   "keys": [
+    "TRAININGSSTART"
+   ],
+   "title": "Trainingsstart (getting started)",
+   "brand": "Superfit",
+   "intensity": 1,
+   "focus": [
+    "Intro"
+   ],
+   "what": "Intro session for new members: trainers explain everything you need to know to start training at Superfit.",
+   "bring": "Your membership card.",
+   "tip": "Ideal if you are new or bringing a friend who just joined.",
+   "source": "https://superfit.club/kurse-classes"
+  },
+  {
+   "keys": [
+    "FUNCTIONAL"
+   ],
+   "title": "Functional Training",
+   "brand": "Superfit",
+   "intensity": 4,
+   "focus": [
+    "Functional",
+    "Strength"
+   ],
+   "what": "Coached small-group functional training with everyday movement patterns, using kettlebells and bodyweight.",
+   "bring": "Towel, water.",
+   "tip": "",
+   "source": ""
+  },
+  {
+   "keys": [
+    "FITROCKZ"
+   ],
+   "title": "FitRockz",
+   "brand": "Superfit",
+   "intensity": 3,
+   "focus": [
+    "Group workout"
+   ],
+   "what": "A Teamtraining format listed in some studio plans. I couldn't find a public description, so ask the trainers.",
+   "bring": "Towel, water.",
+   "tip": "",
+   "source": ""
+  }
+ ]
+}

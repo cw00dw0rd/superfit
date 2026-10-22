@@ -1,0 +1,25 @@
+{
+  "name": "superfit-planner",
+  "version": "1.0.0",
+  "description": "Superfit class finder, agenda, invites and workout tracker. Local-only, no backend.",
+  "scripts": {
+    "serve": "python3 -m http.server 8000 -d www",
+    "schedule:sync": "node tools/build-schedule.mjs",
+    "schedule:pdf": "node tools/build-schedule.mjs --pdf",
+    "glyphs:train": "node tools/train-glyphs.mjs",
+    "glyphs:verify": "node tools/verify.mjs",
+    "test:sync": "node tools/test-sync.mjs",
+    "android:sync": "npx cap add android 2>/dev/null; npx cap sync android",
+    "android:open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/core": "8.5.3",
+    "pdfjs-dist": "4.10.38"
+  },
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3"
+  }
+}
