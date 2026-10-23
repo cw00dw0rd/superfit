@@ -188,21 +188,22 @@ function snapshotHtml() {
   const ended = e => e.date < today || (e.date === today && (e.end || e.start) <= now);
   const next = planned.filter(e => !ended(e)).sort(byTime)[0];
   const pending = planned.filter(ended).sort(byTime).slice(-2);
-  const nb = s.nextBadge;
   return `<div class="card snap">
     <div class="snap-line">
       <div class="grow"><span class="muted small">Next up</span>
         ${next ? `<span class="name">${h(next.name)}</span><span class="small muted">${relDay(next.date, next.start)} · ${h(next.studioName)}</span>`
           : `<span class="name">Nothing planned yet</span><span class="small muted">Pick a class below</span>`}</div>
-      <button class="icon-btn" data-act="goto" data-id="agenda" aria-label="Open agenda" title="Agenda">📅</button>
+      <button class="jump" data-act="goto" data-id="agenda"><span class="ico">📅</span>Full agenda</button>
     </div>
     <div class="snap-stats">
       <div class="grow stats-wrap">
         <span>🔥 <b>${s.streak}</b> wk streak <span class="muted">(best ${s.longestStreak})</span></span>
         <span>This week <b>${s.thisWeek}/${s.goal}</b> <span class="minibar"><i style="width:${Math.min(100, (s.thisWeek / s.goal) * 100)}%"></i></span></span>
-        ${nb ? `<span>Next badge ${nb.ico} ${h(nb.name)} <b>${nb.have}/${nb.need}</b></span>` : `<span>All badges earned</span>`}
+        ${s.nextBadges.length ? `<span class="badge-prog"><span class="muted small">${s.nextBadges.length > 1 ? 'Badges in progress' : 'Next badge'}</span>
+          ${s.nextBadges.map(b => `<span class="bp"><span>${b.ico} ${h(b.name)}</span><b>${b.have}/${b.need}</b><span class="minibar"><i style="width:${(b.have / b.need) * 100}%"></i></span></span>`).join('')}</span>`
+          : `<span>All badges earned</span>`}
       </div>
-      <button class="icon-btn" data-act="goto" data-id="progress" aria-label="Open progress" title="Progress">🏆</button>
+      <button class="jump" data-act="goto" data-id="progress"><span class="ico">🏆</span>All badges</button>
     </div>
     ${pending.map(e => `<div class="pending"><span class="grow">Did you go? <b>${h(e.name)}</b> · ${fmtDate(e.date)} ${e.start}</span>
       <button class="btn sm" data-act="done" data-id="${e.id}" aria-label="I went">✓</button>
@@ -451,20 +452,30 @@ function stats() {
   log.filter(l => isoDay(parseYmd(l.date)) === 7 && satWeeks.has(weekKey(l.date))).forEach(l => weekends.add(weekKey(l.date)));
   const total = log.length;
   // [icon, name, earned, progress?]; streak badges use the best streak so an earned badge is never lost.
-  const count = (have, need) => [have >= need, [Math.min(have, need), need]];
+  // [earned, [have, need], family]; a family is one kind of progress (workouts, streak, ...).
+  const count = (have, need, family) => [have >= need, [Math.min(have, need), need], family];
   const badges = [
-    ['🌱', 'First workout', ...count(total, 1)], ['🔥', '5 workouts', ...count(total, 5)], ['💪', '10 workouts', ...count(total, 10)],
-    ['🏅', '25 workouts', ...count(total, 25)], ['🏆', '50 workouts', ...count(total, 50)], ['👑', '100 workouts', ...count(total, 100)],
-    ['📆', '3-week streak', ...count(longestStreak, 3)], ['⚡', '8-week streak', ...count(longestStreak, 8)],
+    ['🌱', 'First workout', ...count(total, 1, 'workouts')], ['🔥', '5 workouts', ...count(total, 5, 'workouts')], ['💪', '10 workouts', ...count(total, 10, 'workouts')],
+    ['🏅', '25 workouts', ...count(total, 25, 'workouts')], ['🏆', '50 workouts', ...count(total, 50, 'workouts')], ['👑', '100 workouts', ...count(total, 100, 'workouts')],
+    ['📆', '3-week streak', ...count(longestStreak, 3, 'streak')], ['⚡', '8-week streak', ...count(longestStreak, 8, 'streak')],
     ['🤝', 'Brought a friend', log.some(l => (l.friends || []).length)],
-    ['🎨', '5 class types', ...count(seen.size, 5)], ['🧭', '2 studios', ...count(studios.size, 2)],
+    ['🎨', '5 class types', ...count(seen.size, 5, 'types')], ['🧭', '2 studios', ...count(studios.size, 2, 'studios')],
     ['🌅', 'Early bird (before 9)', log.some(l => l.start && l.start < '09:00')],
     ['🦉', 'Night owl (20:00+)', log.some(l => l.start && l.start >= '20:00')],
     ['🎯', 'Weekend warrior', weekends.size > 0],
   ];
-  const nextBadge = badges.filter(b => !b[2] && b[3]).map(([ico, name, , [have, need]]) => ({ ico, name, have, need }))
-    .sort((a, b) => b.have / b.need - a.have / a.need)[0] || null;
-  return { total, thisWeek, goal, streak, longestStreak, nextBadge, points, level: LEVELS[Math.min(level, LEVELS.length - 1)], levelProgress: (points % 150) / 150, badges, types: seen.size };
+  // Badges in progress: the nearest locked badge of each family, closest to done first, at most 3.
+  // Only families with some progress are shown; with none at all, the single nearest badge is.
+  const nearest = {};
+  for (const [ico, name, ok, prog, family] of badges) {
+    if (ok || !prog) continue;
+    if (!nearest[family] || prog[1] < nearest[family].need) nearest[family] = { ico, name, have: prog[0], need: prog[1] };
+  }
+  const byRatio = (a, b) => b.have / b.need - a.have / a.need || a.need - b.need;
+  const open = Object.values(nearest).sort(byRatio);
+  const nextBadges = open.some(b => b.have > 0) ? open.filter(b => b.have > 0).slice(0, 3) : open.slice(0, 1);
+  const nextBadge = nextBadges[0] || null;
+  return { total, thisWeek, goal, streak, longestStreak, nextBadge, nextBadges, points, level: LEVELS[Math.min(level, LEVELS.length - 1)], levelProgress: (points % 150) / 150, badges, types: seen.size };
 }
 
 function renderProgress() {
