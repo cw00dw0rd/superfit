@@ -7,10 +7,10 @@
 // Environment-neutral (browser + Node tests): pass in a Storage-like object.
 
 export const STORAGE_KEY = 'sfp.v1';
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export const DEFAULTS = {
-  prefs: { studios: [], plan: 'all', day: 'all', tod: 'all', q: '', weeklyGoal: 2 },
+  prefs: { studios: [], plan: 'all', day: 'all', tod: 'all', q: '', weeklyGoal: 2, days: [], tods: [], plans: [], allStudios: false },
   agenda: [], friends: [], log: [], nameFixes: {}, schedule: null, lastSync: null,
 };
 
@@ -18,6 +18,16 @@ export const DEFAULTS = {
 const MIGRATIONS = {
   // v0 = the unversioned format shipped 2026-10-21/22. v1 adds schemaVersion; normalize() fills gaps.
   1: s => s,
+  // v2 (2026-10-23): dashboard filters are multi-select arrays. The old single values are converted and kept.
+  2: s => {
+    const p = isObj(s.prefs) ? { ...s.prefs } : {};
+    const one = v => (v === undefined || v === null || v === 'all' || v === '' ? [] : [v]);
+    if (!Array.isArray(p.days)) p.days = one(p.day).map(Number).filter(d => d >= 1 && d <= 7);
+    if (!Array.isArray(p.tods)) p.tods = one(p.tod);
+    if (!Array.isArray(p.plans)) p.plans = one(p.plan);
+    if (typeof p.allStudios !== 'boolean') p.allStudios = false;
+    return { ...s, prefs: p };
+  },
 };
 
 const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
@@ -27,7 +37,7 @@ const arr = v => (Array.isArray(v) ? v : []);
 export function normalize(s) {
   const out = { ...s };
   out.prefs = { ...DEFAULTS.prefs, ...(isObj(s.prefs) ? s.prefs : {}) };
-  out.prefs.studios = arr(out.prefs.studios);
+  for (const k of ['studios', 'days', 'tods', 'plans']) out.prefs[k] = arr(out.prefs[k]);
   for (const k of ['agenda', 'friends', 'log']) out[k] = arr(s[k]);
   out.nameFixes = isObj(s.nameFixes) ? s.nameFixes : {};
   if (!('schedule' in out)) out.schedule = null;

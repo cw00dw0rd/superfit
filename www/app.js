@@ -18,10 +18,12 @@ const todayYmd = () => ymd(new Date());
 const nowHm = () => { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 const fullName = c => [c.name, ...(c.tags || [])].join(' ');
 
-function toast(msg) {
+// actions: [{ label, act, id }] rendered as buttons handled by the normal data-act click handler.
+function toast(msg, actions = []) {
   const t = $('#toast');
-  t.textContent = msg; t.hidden = false;
-  clearTimeout(toast.timer); toast.timer = setTimeout(() => (t.hidden = true), 2600);
+  t.innerHTML = `<span>${h(msg)}</span>` + actions.map(a => `<button class="toast-act" data-act="${a.act}" data-id="${h(a.id)}">${h(a.label)}</button>`).join('');
+  t.hidden = false;
+  clearTimeout(toast.timer); toast.timer = setTimeout(() => (t.hidden = true), actions.length ? 6000 : 2600);
 }
 
 // ---------- state (all local; versioned and migrated by js/store.js) ----------
@@ -116,17 +118,6 @@ function nextDates(day, start, n = 4) {
   return out;
 }
 
-function filteredClasses() {
-  const p = S.prefs, q = p.q.trim().toUpperCase();
-  const tod = { morning: ['00:00', '12:00'], midday: ['12:00', '17:00'], evening: ['17:00', '24:00'] }[p.tod];
-  return schedule.classes.filter(c =>
-    (!p.studios.length || p.studios.includes(c.studio)) &&
-    (p.plan === 'all' || c.plan === p.plan) &&
-    (p.day === 'all' || c.day === +p.day) &&
-    (!tod || (c.start >= tod[0] && c.start < tod[1])) &&
-    (!q || fullName(c).toUpperCase().includes(q) || brandLabel(c.brand).toUpperCase().includes(q) || (classInfo(c)?.title || '').toUpperCase().includes(q)));
-}
-
 // ---------- views ----------
 let tab = 'search';
 const TITLES = { search: 'Classes', agenda: 'Agenda', friends: 'Friends', progress: 'Progress', settings: 'Settings' };
@@ -137,53 +128,147 @@ function render() {
   ({ search: renderSearch, agenda: renderAgenda, friends: renderFriends, progress: renderProgress, settings: renderSettings })[tab]();
 }
 
+const TOD = { morning: ['00:00', '12:00'], midday: ['12:00', '17:00'], evening: ['17:00', '24:00'] };
+const TOD_LABEL = { morning: 'Morning', midday: 'Midday', evening: 'Evening' };
+const DAY_SHORT = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+const toggle = (list, v) => (list.includes(v) ? list.filter(x => x !== v) : [...list, v]);
+
+// Studios you train at: the ones you picked, else the ones in your agenda/log history.
+function myStudios() {
+  if (S.prefs.studios.length) return S.prefs.studios;
+  const seen = [...new Set([...S.log, ...S.agenda].map(e => e.studio).filter(Boolean))];
+  return seen.filter(id => schedule.studios.some(s => s.id === id));
+}
+// Studios shown on the dashboard; [] = all.
+const shownStudios = () => (S.prefs.allStudios ? [] : myStudios());
+
+function filteredClasses() {
+  const p = S.prefs, q = (p.q || '').trim().toUpperCase(), studios = shownStudios();
+  return schedule.classes.filter(c =>
+    (!studios.length || studios.includes(c.studio)) &&
+    (!p.plans.length || p.plans.includes(c.plan)) &&
+    (!p.days.length || p.days.includes(c.day)) &&
+    (!p.tods.length || p.tods.some(t => TOD[t] && c.start >= TOD[t][0] && c.start < TOD[t][1])) &&
+    (!q || fullName(c).toUpperCase().includes(q) || brandLabel(c.brand).toUpperCase().includes(q) || (classInfo(c)?.title || '').toUpperCase().includes(q)));
+}
+
+// One-tap suggestion: your most frequent class (by history), else the next BODYPUMP at your studios.
+function suggestNext() {
+  const taken = new Set(S.agenda.filter(a => a.status === 'planned').map(a => `${a.classId}|${a.date}`));
+  const freeDate = c => nextDates(c.day, c.start, 4).find(d => !taken.has(`${c.id}|${d}`));
+  const score = new Map(), today = parseYmd(todayYmd());
+  const add = (e, w) => {
+    if (!e.classId || !e.date) return;
+    const ago = Math.max(0, (today - parseYmd(e.date)) / 864e5);
+    score.set(e.classId, (score.get(e.classId) || 0) + w + Math.max(0, 1 - ago / 90));
+  };
+  S.log.forEach(l => add(l, 2));
+  S.agenda.filter(a => a.status !== 'missed').forEach(a => add(a, 1));
+  for (const [id] of [...score].sort((a, b) => b[1] - a[1])) {
+    const c = schedule.classes.find(x => x.id === id), date = c && freeDate(c);
+    if (date) return { c, date, why: 'your usual' };
+  }
+  const mine = myStudios();
+  const pick = list => list.map(c => ({ c, date: freeDate(c) })).filter(x => x.date)
+    .sort((a, b) => (a.date + a.c.start).localeCompare(b.date + b.c.start))[0];
+  const pump = schedule.classes.filter(c => c.name === 'BODYPUMP');
+  const found = pick(pump.filter(c => !mine.length || mine.includes(c.studio))) || pick(pump);
+  return found && { ...found, why: 'next BODYPUMP' };
+}
+
+const relDay = (date, start) => {
+  const diff = Math.round((parseYmd(date) - parseYmd(todayYmd())) / 864e5);
+  return diff === 0 ? `today ${start}` : diff === 1 ? `tomorrow ${start}` : `${fmtDate(date)} ${start} · in ${diff} days`;
+};
+
+function snapshotHtml() {
+  const s = stats(), today = todayYmd(), now = nowHm();
+  const byTime = (a, b) => (a.date + a.start).localeCompare(b.date + b.start);
+  const planned = S.agenda.filter(e => e.status === 'planned');
+  const ended = e => e.date < today || (e.date === today && (e.end || e.start) <= now);
+  const next = planned.filter(e => !ended(e)).sort(byTime)[0];
+  const pending = planned.filter(ended).sort(byTime).slice(-2);
+  const nb = s.nextBadge;
+  return `<div class="card snap">
+    <button class="snap-line" data-act="goto" data-id="agenda">
+      <span class="muted small">Next up</span>
+      ${next ? `<span class="name">${h(next.name)}</span><span class="small muted">${relDay(next.date, next.start)} · ${h(next.studioName)}</span>`
+        : `<span class="name">Nothing planned yet</span><span class="small muted">Pick a class below</span>`}
+    </button>
+    <button class="snap-stats" data-act="goto" data-id="progress">
+      <span>🔥 <b>${s.streak}</b> wk streak <span class="muted">(best ${s.longestStreak})</span></span>
+      <span>This week <b>${s.thisWeek}/${s.goal}</b> <span class="minibar"><i style="width:${Math.min(100, (s.thisWeek / s.goal) * 100)}%"></i></span></span>
+      ${nb ? `<span>Next badge ${nb.ico} ${h(nb.name)} <b>${nb.have}/${nb.need}</b></span>` : `<span>All badges earned 🏆</span>`}
+    </button>
+    ${pending.map(e => `<div class="pending"><span class="grow">Did you go? <b>${h(e.name)}</b> · ${fmtDate(e.date)} ${e.start}</span>
+      <button class="btn sm" data-act="done" data-id="${e.id}" aria-label="I went">✓</button>
+      <button class="btn sm plain" data-act="missed" data-id="${e.id}" aria-label="Missed it">✗</button></div>`).join('')}
+  </div>`;
+}
+
+function quickActionsHtml() {
+  const sug = suggestNext();
+  const st = sug && studioById(sug.c.studio);
+  return `<div class="quick">
+    <button class="btn plain" data-act="log-manual">＋ Log workout</button>
+    ${sug ? `<button class="btn" data-act="quick-plan" data-id="${h(sug.c.id)}" data-date="${sug.date}" title="${h(sug.why)}">⚡ Plan ${h(fullName(sug.c))} · ${fmtDate(sug.date)} ${sug.c.start} · ${h(st.name)}</button>` : ''}
+  </div>`;
+}
+
 function renderSearch() {
-  const p = S.prefs;
-  const opt = (v, l, cur) => `<option value="${v}" ${String(cur) === String(v) ? 'selected' : ''}>${l}</option>`;
+  const p = S.prefs, mine = myStudios(), all = p.allStudios || !mine.length;
+  const seg = (act, val, on, label) => `<button class="seg ${on ? 'on' : ''}" aria-pressed="${on}" data-act="${act}" data-id="${val}">${label}</button>`;
   $('#view').innerHTML = `
-    <input id="q" type="search" placeholder="Search classes, e.g. BODYPUMP, Yoga, Rücken" value="${h(p.q)}" autocomplete="off">
+    ${snapshotHtml()}
+    ${quickActionsHtml()}
+    <input id="q" type="search" placeholder="Search, e.g. BODYPUMP, Yoga, Rücken" value="${h(p.q)}" autocomplete="off">
     <div class="chips" style="margin-top:8px">
-      <button class="chip ${p.studios.length ? '' : 'on'}" data-act="studio-all">All studios</button>
-      ${schedule.studios.map(s => `<button class="chip ${p.studios.includes(s.id) ? 'on' : ''}" data-act="studio" data-id="${h(s.id)}">${h(s.name)}</button>`).join('')}
+      ${mine.length ? `<button class="chip ${all ? '' : 'on'}" data-act="studio-mine">My studios</button>` : ''}
+      <button class="chip ${all ? 'on' : ''}" data-act="studio-all">All studios</button>
+      ${schedule.studios.map(s => `<button class="chip ${!all && mine.includes(s.id) ? 'on' : ''}" data-act="studio" data-id="${h(s.id)}">${h(s.name)}</button>`).join('')}
     </div>
-    <div class="filters">
-      <select id="f-plan">${opt('all', 'All plans', p.plan)}${opt('kurs', 'Kursplan', p.plan)}${opt('team', 'Teamtraining', p.plan)}</select>
-      <select id="f-day">${opt('all', 'Any day', p.day)}${DAYS_LONG.map((d, i) => opt(i + 1, d, p.day)).join('')}</select>
-      <select id="f-tod" style="grid-column: span 2">${opt('all', 'Any time', p.tod)}${opt('morning', 'Morning (before 12)', p.tod)}${opt('midday', 'Midday (12–17)', p.tod)}${opt('evening', 'Evening (after 17)', p.tod)}</select>
-    </div>
+    <div class="segrow" role="group" aria-label="Days">${DAY_SHORT.map((d, i) => seg('toggle-day', i + 1, p.days.includes(i + 1), d)).join('')}</div>
+    <div class="segrow" role="group" aria-label="Time and plan">${Object.keys(TOD).map(t => seg('toggle-tod', t, p.tods.includes(t), TOD_LABEL[t])).join('')}<span class="sep"></span>${seg('toggle-plan', 'kurs', p.plans.includes('kurs'), 'Kurs')}${seg('toggle-plan', 'team', p.plans.includes('team'), 'Team')}</div>
     <div id="results"></div>`;
   renderResults();
 }
 
+const expandedDays = new Set();
+const DAY_CAP = 6;
+
 function renderResults() {
-  const list = filteredClasses();
   if (!schedule.classes.length) {
     $('#results').innerHTML = `<div class="empty">No schedule data yet.<br><br><button class="btn" data-act="goto-settings">Check for updates</button></div>`;
     return;
   }
-  if (!list.length) { $('#results').innerHTML = `<div class="empty">No classes match these filters.</div>`; return; }
-  const today = isoDay(new Date());
-  const order = d => (d - today + 7) % 7;
-  const byDay = {};
-  for (const c of list) (byDay[c.day] ||= []).push(c);
-  const dayLabel = d => order(d) === 0 ? 'Today' : order(d) === 1 ? 'Tomorrow' : DAYS_LONG[d - 1];
-  $('#results').innerHTML = `<p class="muted small">${list.length} classes</p>` + Object.keys(byDay).map(Number).sort((a, b) => order(a) - order(b)).map(d => `
-    <h2>${dayLabel(d)}</h2>
-    ${byDay[d].sort((a, b) => a.start.localeCompare(b.start)).map(classCard).join('')}`).join('');
+  const list = filteredClasses(), now = nowHm(), base = new Date();
+  const multi = shownStudios().length !== 1;
+  const planned = new Set(S.agenda.filter(a => a.status === 'planned').map(a => `${a.classId}|${a.date}`));
+  const cards = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(base); d.setDate(base.getDate() + i);
+    const day = isoDay(d), date = ymd(d);
+    const rows = list.filter(c => c.day === day && (i > 0 || c.end > now)).sort((a, b) => a.start.localeCompare(b.start));
+    if (!rows.length) continue;
+    const label = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : DAYS_LONG[day - 1];
+    const open = expandedDays.has(date), shown = open ? rows : rows.slice(0, DAY_CAP);
+    cards.push(`<section class="daycard ${open ? 'wide' : ''}">
+      <button class="dayhead" data-act="expand-day" data-id="${date}" aria-expanded="${open}"><b>${label}</b><span class="muted small">${d.getDate()}.${d.getMonth() + 1}. · ${rows.length}</span></button>
+      ${shown.map(c => classRow(c, date, multi, planned.has(`${c.id}|${date}`))).join('')}
+      ${rows.length > shown.length ? `<button class="more" data-act="expand-day" data-id="${date}">+${rows.length - shown.length} more</button>` : ''}
+    </section>`);
+  }
+  $('#results').innerHTML = cards.length ? `<div class="daygrid">${cards.join('')}</div>` : `<div class="empty">No classes match these filters.</div>`;
 }
 
-function classCard(c) {
-  const st = studioById(c.studio);
-  const planned = S.agenda.some(a => a.classId === c.id && a.date >= todayYmd() && a.status === 'planned');
-  return `<div class="card tap row" data-act="open-class" data-id="${h(c.id)}">
-    <div class="time">${c.start}</div>
-    <div class="grow"><div class="name">${h(fullName(c))} ${planned ? '📌' : ''}</div>
-      <div class="muted small">${h(st.name)} · ${c.start}–${c.end}${c.brand && c.brand !== 'TEAMTRAINING' ? ' · ' + h(brandLabel(c.brand)) : ''}</div></div>
-    <span class="badge ${c.plan === 'team' ? 'team' : ''}">${PLAN_LABEL[c.plan]}</span>
-  </div>`;
+function classRow(c, date, multi, isPlanned) {
+  return `<button class="crow ${c.plan}" data-act="open-class" data-id="${h(c.id)}" data-date="${date}" title="${h(fullName(c))} · ${c.start}–${c.end} · ${PLAN_LABEL[c.plan]}">
+    <span class="t">${c.start}</span><span class="n">${h(fullName(c))}${isPlanned ? ' 📌' : ''}</span>
+    ${multi ? `<span class="s">${h(studioById(c.studio).name)}</span>` : ''}
+  </button>`;
 }
 
-function openClass(id) {
+function openClass(id, prefDate) {
   const c = schedule.classes.find(x => x.id === id);
   if (!c) return;
   const st = studioById(c.studio), ci = classInfo(c);
@@ -202,7 +287,7 @@ function openClass(id) {
       ${ci.source ? `<a class="small" href="${h(ci.source)}" target="_blank" rel="noopener">More about this class ↗</a>` : ''}
     </div>` : ''}
     <label>Date</label>
-    <select id="class-date">${dates.map(d => `<option value="${d}">${fmtDate(d)}</option>`).join('')}</select>
+    <select id="class-date">${dates.map(d => `<option value="${d}" ${d === prefDate ? 'selected' : ''}>${fmtDate(d)}</option>`).join('')}</select>
     <div class="actions">
       <button class="btn" data-act="add-agenda" data-id="${h(c.id)}">＋ Add to agenda</button>
       <button class="btn ghost" data-act="add-invite" data-id="${h(c.id)}">Add &amp; invite</button>
@@ -321,6 +406,17 @@ function stats() {
   const d = new Date();
   if (thisWeek < goal) d.setDate(d.getDate() - 7);
   while ((perWeek[weekKey(ymd(d))] || 0) >= goal) { streak++; d.setDate(d.getDate() - 7); }
+  // Longest run of goal-meeting weeks, from the first logged week to this one.
+  let longestStreak = 0, run = 0;
+  if (log.length) {
+    const w = parseYmd(log[0].date), end = weekKey(todayYmd());
+    for (let guard = 0; guard < 600; guard++, w.setDate(w.getDate() + 7)) {
+      run = (perWeek[weekKey(ymd(w))] || 0) >= goal ? run + 1 : 0;
+      longestStreak = Math.max(longestStreak, run);
+      if (weekKey(ymd(w)) === end) break;
+    }
+  }
+  longestStreak = Math.max(longestStreak, streak);
   const seen = new Set();
   let points = 0;
   for (const l of log) {
@@ -336,17 +432,21 @@ function stats() {
   const weekends = new Set(), satWeeks = new Set(log.filter(l => isoDay(parseYmd(l.date)) === 6).map(l => weekKey(l.date)));
   log.filter(l => isoDay(parseYmd(l.date)) === 7 && satWeeks.has(weekKey(l.date))).forEach(l => weekends.add(weekKey(l.date)));
   const total = log.length;
+  // [icon, name, earned, progress?]; streak badges use the best streak so an earned badge is never lost.
+  const count = (have, need) => [have >= need, [Math.min(have, need), need]];
   const badges = [
-    ['🌱', 'First workout', total >= 1], ['🔥', '5 workouts', total >= 5], ['💪', '10 workouts', total >= 10],
-    ['🏅', '25 workouts', total >= 25], ['🏆', '50 workouts', total >= 50], ['👑', '100 workouts', total >= 100],
-    ['📆', '3-week streak', streak >= 3], ['⚡', '8-week streak', streak >= 8],
+    ['🌱', 'First workout', ...count(total, 1)], ['🔥', '5 workouts', ...count(total, 5)], ['💪', '10 workouts', ...count(total, 10)],
+    ['🏅', '25 workouts', ...count(total, 25)], ['🏆', '50 workouts', ...count(total, 50)], ['👑', '100 workouts', ...count(total, 100)],
+    ['📆', '3-week streak', ...count(longestStreak, 3)], ['⚡', '8-week streak', ...count(longestStreak, 8)],
     ['🤝', 'Brought a friend', log.some(l => (l.friends || []).length)],
-    ['🎨', '5 class types', seen.size >= 5], ['🧭', '2 studios', studios.size >= 2],
+    ['🎨', '5 class types', ...count(seen.size, 5)], ['🧭', '2 studios', ...count(studios.size, 2)],
     ['🌅', 'Early bird (before 9)', log.some(l => l.start && l.start < '09:00')],
     ['🦉', 'Night owl (20:00+)', log.some(l => l.start && l.start >= '20:00')],
     ['🎯', 'Weekend warrior', weekends.size > 0],
   ];
-  return { total, thisWeek, goal, streak, points, level: LEVELS[Math.min(level, LEVELS.length - 1)], levelProgress: (points % 150) / 150, badges, types: seen.size };
+  const nextBadge = badges.filter(b => !b[2] && b[3]).map(([ico, name, , [have, need]]) => ({ ico, name, have, need }))
+    .sort((a, b) => b.have / b.need - a.have / a.need)[0] || null;
+  return { total, thisWeek, goal, streak, longestStreak, nextBadge, points, level: LEVELS[Math.min(level, LEVELS.length - 1)], levelProgress: (points % 150) / 150, badges, types: seen.size };
 }
 
 function renderProgress() {
@@ -359,14 +459,14 @@ function renderProgress() {
       <p class="small muted">${s.thisWeek >= s.goal ? 'Weekly goal reached 🎉' : `${s.goal - s.thisWeek} more to hit your weekly goal`}</p>
     </div>
     <div class="card stat-grid">
-      <div class="stat"><b>${s.streak}</b><span class="small muted">week streak</span></div>
+      <div class="stat"><b>${s.streak}</b><span class="small muted">week streak · best ${s.longestStreak}</span></div>
       <div class="stat"><b>${s.total}</b><span class="small muted">workouts</span></div>
       <div class="stat"><b>${s.points}</b><span class="small muted">points</span></div>
     </div>
     <div class="card"><div class="row between"><b>Level: ${s.level}</b><span class="small muted">${s.types} class types tried</span></div>
       <div class="bar"><div style="width:${s.levelProgress * 100}%"></div></div></div>
     <h2>Badges</h2>
-    <div class="badges">${s.badges.map(([ico, name, ok]) => `<div class="badge-tile ${ok ? '' : 'locked'}"><span class="ico">${ico}</span>${h(name)}</div>`).join('')}</div>
+    <div class="badges">${s.badges.map(([ico, name, ok, prog]) => `<div class="badge-tile ${ok ? '' : 'locked'}"><span class="ico">${ico}</span>${h(name)}${!ok && prog ? `<span class="prog">${prog[0]}/${prog[1]}</span>` : ''}</div>`).join('')}</div>
     <h2>Recent workouts</h2>
     ${recent.length ? recent.map(l => `<div class="card row"><div class="grow"><div class="name">${h(l.name)}</div>
       <div class="muted small">${fmtDate(l.date)}${l.start ? ' ' + l.start : ''}${l.studioName ? ' · ' + h(l.studioName) : ''}${(l.friends || []).length ? ' · 👥 ' + l.friends.length : ''}</div></div>
@@ -519,14 +619,9 @@ document.addEventListener('input', e => {
 
 document.addEventListener('change', e => {
   const t = e.target;
-  if (t.id === 'f-plan') S.prefs.plan = t.value;
-  else if (t.id === 'f-day') S.prefs.day = t.value;
-  else if (t.id === 'f-tod') S.prefs.tod = t.value;
-  else if (t.id === 'goal') { S.prefs.weeklyGoal = +t.value; save(); toast('Goal saved'); return; }
-  else if (t.id === 'pdf-input') { if (t.files.length) importPdfs([...t.files]); return; }
-  else if (t.id === 'backup-input') { importBackup(t.files[0]); return; }
-  else return;
-  save(); renderResults();
+  if (t.id === 'goal') { S.prefs.weeklyGoal = +t.value; save(); toast('Goal saved'); }
+  else if (t.id === 'pdf-input') { if (t.files.length) importPdfs([...t.files]); }
+  else if (t.id === 'backup-input') importBackup(t.files[0]);
 });
 
 const agendaEntry = id => S.agenda.find(a => a.id === id);
@@ -538,11 +633,28 @@ document.addEventListener('click', async e => {
   const p = S.prefs;
   switch (act) {
     case 'close': closeModal(); break;
-    case 'studio-all': p.studios = []; save(); renderSearch(); break;
-    case 'studio': p.studios = p.studios.includes(id) ? p.studios.filter(s => s !== id) : [...p.studios, id]; save(); renderSearch(); break;
-    case 'open-class': openClass(id); break;
+    case 'studio-all': p.allStudios = true; save(); renderSearch(); break;
+    case 'studio-mine': p.allStudios = false; save(); renderSearch(); break;
+    case 'studio': {
+      p.studios = toggle(myStudios(), id);
+      p.allStudios = !p.studios.length;
+      save(); renderSearch(); break;
+    }
+    case 'toggle-day': p.days = toggle(p.days, Number(id)); save(); renderSearch(); break;
+    case 'toggle-tod': p.tods = toggle(p.tods, id); save(); renderSearch(); break;
+    case 'toggle-plan': p.plans = toggle(p.plans, id); save(); renderSearch(); break;
+    case 'expand-day': expandedDays.has(id) ? expandedDays.delete(id) : expandedDays.add(id); renderResults(); break;
+    case 'goto': tab = id; render(); window.scrollTo(0, 0); break;
+    case 'quick-plan': {
+      const ent = addToAgenda(id, el.dataset.date);
+      render();
+      toast(`Planned ${ent.name} · ${fmtDate(ent.date)} ${ent.start}`, [{ label: 'Undo', act: 'undo-plan', id: ent.id }, { label: 'Invite', act: 'invite', id: ent.id }]);
+      break;
+    }
+    case 'undo-plan': S.agenda = S.agenda.filter(a => a.id !== id); save(); render(); toast('Removed from agenda'); break;
+    case 'open-class': openClass(id, el.dataset.date); break;
     case 'goto-settings': tab = 'settings'; render(); break;
-    case 'add-agenda': { const d = $('#class-date')?.value; if (!d) return toast('No upcoming date'); addToAgenda(id, d); closeModal(); if (tab === 'search') renderResults(); break; }
+    case 'add-agenda': { const d = $('#class-date')?.value; if (!d) return toast('No upcoming date'); addToAgenda(id, d); closeModal(); if (tab === 'search') renderSearch(); break; }
     case 'add-invite': { const d = $('#class-date')?.value; if (!d) return toast('No upcoming date'); const ent = addToAgenda(id, d); inviteSheet(ent); break; }
     case 'invite': inviteSheet(agendaEntry(id)); break;
     case 'cal': calendarSheet(agendaEntry(id)); break;
@@ -554,13 +666,13 @@ document.addEventListener('click', async e => {
       else { await navigator.clipboard?.writeText(text); toast('Invite copied to clipboard'); }
       break;
     }
-    case 'remove': S.agenda = S.agenda.filter(a => a.id !== id); save(); renderAgenda(); break;
+    case 'remove': S.agenda = S.agenda.filter(a => a.id !== id); save(); render(); break;
     case 'done': {
       const ent = agendaEntry(id); ent.status = 'done'; save();
       logWorkout({ date: ent.date, start: ent.start, name: ent.name, studio: ent.studio, studioName: ent.studioName, classId: ent.classId, friends: ent.friends });
-      renderAgenda(); break;
+      render(); break;
     }
-    case 'missed': agendaEntry(id).status = 'missed'; save(); renderAgenda(); break;
+    case 'missed': agendaEntry(id).status = 'missed'; save(); render(); break;
     case 'log-manual': modal(`<h3>Log a workout</h3>
         <label>What did you do?</label><input id="lm-name" placeholder="e.g. Free weights, Run">
         <label>Date</label><input id="lm-date" type="date" value="${todayYmd()}">

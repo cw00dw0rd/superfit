@@ -5,13 +5,14 @@ track workouts. There's no backend: all data lives on the device.
 
 ## Features
 
-- **Class search**: text search, studio chips (remembered), Kursplan/Teamtraining, day and time-of-day filters.
+- **Dashboard (Classes tab)**: a snapshot (next planned class, week streak and best, weekly goal, next badge, "Did you go?" check-ins), quick actions (log a workout; one-tap plan of your usual class, else the next BODYPUMP, with Undo), and a grid of day cards for the next 7 days.
+- **Class search**: text search, studio chips ("My studios" from your picks or history, or all), multi-select day, time-of-day and Kurs/Team buttons. Each day card shows 6 classes with "+N more"; Today hides finished classes.
 - **Class details**: what the class is (Les Mills programs and common class types), intensity, what to bring, and a Google Maps route.
 - **Agenda**: pick one of the next four dates for a class; pending classes ask "Did you go?".
 - **Invites**: per-friend WhatsApp, SMS or email, plus the system share sheet. Calendar invites go through
   a Google Calendar link with your friends' emails pre-filled as guests (saving it sends real invites), or an `.ics` file.
 - **Friends**: added by hand, or picked from contacts where the browser supports it (Chrome on Android).
-- **Workout tracking and gamification**: log from the agenda or by hand; weekly goal, week streak, points, levels, badges.
+- **Workout tracking and gamification**: log from the agenda or by hand; weekly goal, week streak (current and best), points, levels, badges with progress (earned badges are kept).
 - **Schedule updates**: "Check superfit.club for changes" crawls the studio overview, finds each studio's plan PDFs,
   and re-parses only those whose URL changed (Webflow gives re-uploads a new URL). It then shows what was added or removed.
   "Import plan PDFs" parses PDFs you've downloaded yourself.

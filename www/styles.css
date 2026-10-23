@@ -126,3 +126,53 @@ dialog::backdrop { background: rgba(0,0,0,.45); }
 .badge-tile.locked { opacity: .35; filter: grayscale(1); }
 .check { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .check input { width: auto; }
+
+/* ---------- dashboard ---------- */
+#toast[hidden] { display: none; }
+#toast { display: flex; align-items: center; gap: 12px; max-width: calc(100% - 32px); }
+.toast-act { background: none; border: 0; color: #fda4af; font: inherit; font-weight: 700; padding: 0; cursor: pointer; }
+
+.snap { padding: 12px 14px; }
+.snap-line, .snap-stats {
+  display: flex; width: 100%; text-align: left; background: none; border: 0; padding: 0;
+  color: inherit; font: inherit; cursor: pointer;
+}
+.snap-line { flex-direction: column; gap: 1px; }
+.snap-stats { flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 13px; }
+.snap-stats b { font-size: 15px; }
+.minibar { display: inline-block; width: 48px; height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; vertical-align: middle; margin-left: 2px; }
+.minibar > i { display: block; height: 100%; background: var(--accent); }
+.pending { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: var(--accent-soft); font-size: 13px; }
+
+.quick { display: flex; gap: 8px; margin-bottom: 10px; }
+.quick .btn { font-size: 13px; padding: 10px 12px; }
+.quick .btn:last-child:not(:first-child) { flex: 1; min-width: 0; text-align: left; justify-content: flex-start; }
+
+.segrow { display: flex; gap: 4px; margin-bottom: 6px; }
+.seg {
+  flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--card); color: var(--text);
+  border-radius: 8px; padding: 7px 0; font: inherit; font-size: 12px; cursor: pointer;
+}
+.seg.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.segrow .sep { flex: none; width: 8px; }
+
+.daygrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; margin-top: 10px; }
+.daycard { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 4px 6px 6px; min-width: 0; }
+.daycard.wide { grid-column: 1 / -1; }
+.dayhead {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 6px; width: 100%;
+  background: none; border: 0; color: inherit; font: inherit; padding: 6px 4px; cursor: pointer;
+}
+.crow {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: 6px; width: 100%;
+  text-align: left; background: none; border: 0; border-left: 3px solid var(--accent); border-radius: 4px;
+  padding: 5px 4px 5px 6px; margin: 2px 0; color: inherit; font: inherit; font-size: 13px; cursor: pointer;
+}
+.crow.team { border-left-color: var(--team); }
+.crow:hover, .crow:focus-visible { background: var(--bg); }
+.crow .t { font-variant-numeric: tabular-nums; font-weight: 700; }
+.crow .n, .crow .s { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crow .n { font-weight: 600; }
+.crow .s { grid-column: 2; color: var(--muted); font-size: 11px; }
+.more { width: 100%; background: none; border: 0; color: var(--accent); font: inherit; font-size: 12px; font-weight: 600; padding: 6px 0 2px; cursor: pointer; }
+.badge-tile .prog { display: block; font-size: 11px; margin-top: 2px; }

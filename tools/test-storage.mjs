@@ -60,6 +60,16 @@ for (let v = 0; v <= SCHEMA_VERSION; v++) {
   });
 }
 
+// 4b. v1 -> v2: single-value filters become multi-select arrays; the old fields stay.
+check('v1 filters convert to v2 arrays', () => {
+  const v1 = JSON.parse(fs.readFileSync(new URL('v1.json', dir)));
+  const s = migrate({ ...v1, prefs: { ...v1.prefs, day: '3', tod: 'midday', plan: 'team' } }).state;
+  assert.deepEqual([s.prefs.days, s.prefs.tods, s.prefs.plans], [[3], ['midday'], ['team']]);
+  assert.equal(s.prefs.day, '3');
+  const all = migrate({ ...v1, prefs: { ...v1.prefs, day: 'all', tod: 'all', plan: 'all' } }).state;
+  assert.deepEqual([all.prefs.days, all.prefs.tods, all.prefs.plans, all.prefs.allStudios], [[], [], [], false]);
+});
+
 // 5. Unreadable data is quarantined, never overwritten.
 check('corrupt data is quarantined', () => {
   const st = memory({ [STORAGE_KEY]: '{"agenda": [ broken' });
