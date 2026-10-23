@@ -8,7 +8,7 @@ track workouts. There's no backend: all data lives on the device.
 - **Dashboard (Classes tab)**: a snapshot (next planned class, week streak and best, weekly goal, next badge, "Did you go?" check-ins), quick actions (log a workout; one-tap plan of your usual class, else the next BODYPUMP, with Undo), and a grid of day cards for the next 7 days.
 - **Class search**: text search, studio chips ("My studios" from your picks or history, or all), multi-select day, time-of-day and Kurs/Team buttons. Each day card shows 6 classes with "+N more"; Today hides finished classes.
 - **Class details**: what the class is (Les Mills programs and common class types), intensity, what to bring, and a Google Maps route.
-- **Agenda**: pick one of the next four dates for a class; pending classes ask "Did you go?".
+- **Agenda**: pick one of the next four dates for a class; pending classes ask "Did you go?"; completed workouts are listed below, newest first.
 - **Invites**: per-friend WhatsApp, SMS or email, plus the system share sheet. Calendar invites go through
   a Google Calendar link with your friends' emails pre-filled as guests (saving it sends real invites), or an `.ics` file.
 - **Friends**: added by hand, or picked from contacts where the browser supports it (Chrome on Android).

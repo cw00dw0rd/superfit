@@ -190,16 +190,20 @@ function snapshotHtml() {
   const pending = planned.filter(ended).sort(byTime).slice(-2);
   const nb = s.nextBadge;
   return `<div class="card snap">
-    <button class="snap-line" data-act="goto" data-id="agenda">
-      <span class="muted small">Next up</span>
-      ${next ? `<span class="name">${h(next.name)}</span><span class="small muted">${relDay(next.date, next.start)} · ${h(next.studioName)}</span>`
-        : `<span class="name">Nothing planned yet</span><span class="small muted">Pick a class below</span>`}
-    </button>
-    <button class="snap-stats" data-act="goto" data-id="progress">
-      <span>🔥 <b>${s.streak}</b> wk streak <span class="muted">(best ${s.longestStreak})</span></span>
-      <span>This week <b>${s.thisWeek}/${s.goal}</b> <span class="minibar"><i style="width:${Math.min(100, (s.thisWeek / s.goal) * 100)}%"></i></span></span>
-      ${nb ? `<span>Next badge ${nb.ico} ${h(nb.name)} <b>${nb.have}/${nb.need}</b></span>` : `<span>All badges earned 🏆</span>`}
-    </button>
+    <div class="snap-line">
+      <div class="grow"><span class="muted small">Next up</span>
+        ${next ? `<span class="name">${h(next.name)}</span><span class="small muted">${relDay(next.date, next.start)} · ${h(next.studioName)}</span>`
+          : `<span class="name">Nothing planned yet</span><span class="small muted">Pick a class below</span>`}</div>
+      <button class="icon-btn" data-act="goto" data-id="agenda" aria-label="Open agenda" title="Agenda">📅</button>
+    </div>
+    <div class="snap-stats">
+      <div class="grow stats-wrap">
+        <span>🔥 <b>${s.streak}</b> wk streak <span class="muted">(best ${s.longestStreak})</span></span>
+        <span>This week <b>${s.thisWeek}/${s.goal}</b> <span class="minibar"><i style="width:${Math.min(100, (s.thisWeek / s.goal) * 100)}%"></i></span></span>
+        ${nb ? `<span>Next badge ${nb.ico} ${h(nb.name)} <b>${nb.have}/${nb.need}</b></span>` : `<span>All badges earned</span>`}
+      </div>
+      <button class="icon-btn" data-act="goto" data-id="progress" aria-label="Open progress" title="Progress">🏆</button>
+    </div>
     ${pending.map(e => `<div class="pending"><span class="grow">Did you go? <b>${h(e.name)}</b> · ${fmtDate(e.date)} ${e.start}</span>
       <button class="btn sm" data-act="done" data-id="${e.id}" aria-label="I went">✓</button>
       <button class="btn sm plain" data-act="missed" data-id="${e.id}" aria-label="Missed it">✗</button></div>`).join('')}
@@ -210,8 +214,12 @@ function quickActionsHtml() {
   const sug = suggestNext();
   const st = sug && studioById(sug.c.studio);
   return `<div class="quick">
-    <button class="btn plain" data-act="log-manual">＋ Log workout</button>
-    ${sug ? `<button class="btn" data-act="quick-plan" data-id="${h(sug.c.id)}" data-date="${sug.date}" title="${h(sug.why)}">⚡ Plan ${h(fullName(sug.c))} · ${fmtDate(sug.date)} ${sug.c.start} · ${h(st.name)}</button>` : ''}
+    ${sug ? `<button class="suggest" data-act="quick-plan" data-id="${h(sug.c.id)}" data-date="${sug.date}"
+        aria-label="Add ${h(fullName(sug.c))} ${fmtDate(sug.date)} ${sug.c.start} at ${h(st.name)} to agenda">
+      <span class="grow"><span class="cap">Suggested · ${h(sug.why)}</span><span class="what">${h(fullName(sug.c))}</span><span class="when">${fmtDate(sug.date)} ${sug.c.start} · ${h(st.name)}</span></span>
+      <span class="add-pill">＋ Add</span>
+    </button>` : ''}
+    <button class="btn plain log-btn" data-act="log-manual">＋ Log<br>workout</button>
   </div>`;
 }
 
@@ -225,7 +233,8 @@ function renderSearch() {
     <div class="chips" style="margin-top:8px">
       ${mine.length ? `<button class="chip ${all ? '' : 'on'}" data-act="studio-mine">My studios</button>` : ''}
       <button class="chip ${all ? 'on' : ''}" data-act="studio-all">All studios</button>
-      ${schedule.studios.map(s => `<button class="chip ${!all && mine.includes(s.id) ? 'on' : ''}" data-act="studio" data-id="${h(s.id)}">${h(s.name)}</button>`).join('')}
+      ${(all ? schedule.studios : [...mine.map(studioById), ...schedule.studios.filter(s => !mine.includes(s.id))])
+        .map(s => `<button class="chip ${!all && mine.includes(s.id) ? 'on' : ''}" data-act="studio" data-id="${h(s.id)}">${h(s.name)}</button>`).join('')}
     </div>
     <div class="segrow" role="group" aria-label="Days">${DAY_SHORT.map((d, i) => seg('toggle-day', i + 1, p.days.includes(i + 1), d)).join('')}</div>
     <div class="segrow" role="group" aria-label="Time and plan">${Object.keys(TOD).map(t => seg('toggle-tod', t, p.tods.includes(t), TOD_LABEL[t])).join('')}<span class="sep"></span>${seg('toggle-plan', 'kurs', p.plans.includes('kurs'), 'Kurs')}${seg('toggle-plan', 'team', p.plans.includes('team'), 'Team')}</div>
@@ -252,10 +261,11 @@ function renderResults() {
     if (!rows.length) continue;
     const label = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : DAYS_LONG[day - 1];
     const open = expandedDays.has(date), shown = open ? rows : rows.slice(0, DAY_CAP);
-    cards.push(`<section class="daycard ${open ? 'wide' : ''}">
-      <button class="dayhead" data-act="expand-day" data-id="${date}" aria-expanded="${open}"><b>${label}</b><span class="muted small">${d.getDate()}.${d.getMonth() + 1}. · ${rows.length}</span></button>
+    const canExpand = rows.length > DAY_CAP;
+    cards.push(`<section class="daycard ${open ? 'wide' : ''}" data-day="${date}">
+      <button class="dayhead" ${canExpand ? `data-act="expand-day" data-id="${date}" aria-expanded="${open}"` : ''}><b>${label}</b><span class="muted small">${d.getDate()}.${d.getMonth() + 1}. · ${rows.length}${canExpand ? (open ? ' ▴' : ' ▾') : ''}</span></button>
       ${shown.map(c => classRow(c, date, multi, planned.has(`${c.id}|${date}`))).join('')}
-      ${rows.length > shown.length ? `<button class="more" data-act="expand-day" data-id="${date}">+${rows.length - shown.length} more</button>` : ''}
+      ${canExpand ? `<button class="more" data-act="expand-day" data-id="${date}">${open ? 'Show less ▴' : `+${rows.length - shown.length} more ▾`}</button>` : ''}
     </section>`);
   }
   $('#results').innerHTML = cards.length ? `<div class="daygrid">${cards.join('')}</div>` : `<div class="empty">No classes match these filters.</div>`;
@@ -307,12 +317,14 @@ function addToAgenda(classId, date) {
   return e;
 }
 
+let showAllDone = false;
 function renderAgenda() {
   const today = todayYmd();
   const sorted = [...S.agenda].sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
   const upcoming = sorted.filter(e => e.status === 'planned' && e.date >= today);
   const pending = sorted.filter(e => e.status === 'planned' && e.date < today);
-  const friendNames = e => e.friends.map(id => S.friends.find(f => f.id === id)?.name).filter(Boolean);
+  const friendNames = e => (e.friends || []).map(id => S.friends.find(f => f.id === id)?.name).filter(Boolean);
+  const done = [...S.log].sort((a, b) => (b.date + (b.start || '')).localeCompare(a.date + (a.start || '')));
   const card = (e, past) => `<div class="card">
     <div class="row between"><div class="grow">
       <div class="name">${h(e.name)}</div>
@@ -332,7 +344,13 @@ function renderAgenda() {
     ${pending.length ? `<h2>Did you go?</h2>${pending.map(e => card(e, true)).join('')}` : ''}
     <h2>Upcoming</h2>
     ${upcoming.length ? upcoming.map(e => card(e, false)).join('') : `<div class="empty">Nothing planned. Find a class and tap “Add to agenda”.</div>`}
-    <div class="actions"><button class="btn plain block" data-act="log-manual">＋ Log another workout</button></div>`;
+    <div class="actions"><button class="btn plain block" data-act="log-manual">＋ Log another workout</button></div>
+    <h2>Completed</h2>
+    ${done.length ? done.slice(0, showAllDone ? done.length : 10).map(l => `<div class="card row"><div class="grow"><div class="name">✓ ${h(l.name)}</div>
+      <div class="muted small">${fmtDate(l.date)}${l.start ? ' ' + l.start : ''}${l.studioName ? ' · ' + h(l.studioName) : ''}${(l.friends || []).length ? ' · 👥 ' + l.friends.length : ''}</div></div>
+      <button class="btn sm plain" data-act="log-del" data-id="${l.id}" aria-label="Delete workout">✕</button></div>`).join('')
+      : `<div class="empty">No workouts yet. Tap “I went” after a class, or log one.</div>`}
+    ${done.length > 10 && !showAllDone ? `<button class="btn plain block" data-act="show-all-done">Show all (${done.length})</button>` : ''}`;
 }
 
 function calendarSheet(e) {
@@ -636,14 +654,22 @@ document.addEventListener('click', async e => {
     case 'studio-all': p.allStudios = true; save(); renderSearch(); break;
     case 'studio-mine': p.allStudios = false; save(); renderSearch(); break;
     case 'studio': {
-      p.studios = toggle(myStudios(), id);
+      // Newly selected studios go to the front of the row; deselected ones drop back into place.
+      const cur = myStudios();
+      p.studios = cur.includes(id) ? cur.filter(x => x !== id) : [id, ...cur];
       p.allStudios = !p.studios.length;
       save(); renderSearch(); break;
     }
     case 'toggle-day': p.days = toggle(p.days, Number(id)); save(); renderSearch(); break;
     case 'toggle-tod': p.tods = toggle(p.tods, id); save(); renderSearch(); break;
     case 'toggle-plan': p.plans = toggle(p.plans, id); save(); renderSearch(); break;
-    case 'expand-day': expandedDays.has(id) ? expandedDays.delete(id) : expandedDays.add(id); renderResults(); break;
+    case 'expand-day': {
+      const closing = expandedDays.has(id);
+      closing ? expandedDays.delete(id) : expandedDays.add(id);
+      renderResults();
+      if (closing) document.querySelector(`.daycard[data-day="${id}"]`)?.scrollIntoView({ block: 'nearest' });
+      break;
+    }
     case 'goto': tab = id; render(); window.scrollTo(0, 0); break;
     case 'quick-plan': {
       const ent = addToAgenda(id, el.dataset.date);
@@ -684,7 +710,8 @@ document.addEventListener('click', async e => {
       logWorkout({ date: $('#lm-date').value || todayYmd(), name, studio: sid, studioName: sid ? studioById(sid).name : '', friends: [] });
       closeModal(); render(); break;
     }
-    case 'log-del': S.log = S.log.filter(l => l.id !== id); save(); renderProgress(); break;
+    case 'log-del': S.log = S.log.filter(l => l.id !== id); save(); render(); break;
+    case 'show-all-done': showAllDone = true; renderAgenda(); break;
     case 'friend-add': {
       const name = $('#fr-name').value.trim(); if (!name) return toast('Enter a name');
       S.friends.push({ id: uid(), name, phone: $('#fr-phone').value.trim(), email: $('#fr-email').value.trim() }); save(); renderFriends(); break;
