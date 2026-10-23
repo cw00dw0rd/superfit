@@ -1,0 +1,141 @@
+{
+ "prefs": {
+  "studios": [
+   "mitte",
+   "friedrichshain"
+  ],
+  "plan": "kurs",
+  "day": "4",
+  "tod": "evening",
+  "q": "pump",
+  "weeklyGoal": 3,
+  "days": [
+   4,
+   6
+  ],
+  "tods": [
+   "evening"
+  ],
+  "plans": [
+   "kurs"
+  ],
+  "allStudios": false
+ },
+ "agenda": [
+  {
+   "id": "mvhytd6pz9slf",
+   "classId": "mitte-kurs-3-1800-bodypump",
+   "name": "BODYPUMP",
+   "studio": "mitte",
+   "studioName": "Mitte",
+   "plan": "kurs",
+   "date": "2026-10-21",
+   "start": "18:00",
+   "end": "18:50",
+   "friends": [
+    "mvhyu0a1b2c3d"
+   ],
+   "status": "done"
+  },
+  {
+   "id": "mvhyv8q7r6s5t",
+   "classId": "mitte-team-4-1730-bauch",
+   "name": "BAUCH",
+   "studio": "mitte",
+   "studioName": "Mitte",
+   "plan": "team",
+   "date": "2026-10-23",
+   "start": "17:30",
+   "end": "17:50",
+   "friends": [],
+   "status": "planned"
+  },
+  {
+   "id": "mvhyw1x2y3z4a",
+   "classId": "friedrichshain-kurs-2-1900-bodyattack",
+   "name": "BODYATTACK",
+   "studio": "friedrichshain",
+   "studioName": "Friedrichshain",
+   "plan": "kurs",
+   "date": "2026-10-20",
+   "start": "19:00",
+   "end": "19:50",
+   "friends": [],
+   "status": "missed"
+  }
+ ],
+ "friends": [
+  {
+   "id": "mvhyu0a1b2c3d",
+   "name": "Alex",
+   "phone": "0151 2345678",
+   "email": "alex@example.com"
+  }
+ ],
+ "log": [
+  {
+   "id": "mvhyx5b6c7d8e",
+   "date": "2026-10-21",
+   "start": "18:00",
+   "name": "BODYPUMP",
+   "studio": "mitte",
+   "studioName": "Mitte",
+   "classId": "mitte-kurs-3-1800-bodypump",
+   "friends": [
+    "mvhyu0a1b2c3d"
+   ],
+   "type": "full",
+   "minutes": 50
+  },
+  {
+   "id": "mvhyy9f0g1h2i",
+   "date": "2026-10-19",
+   "name": "Free weights",
+   "studio": "",
+   "studioName": "",
+   "friends": []
+  },
+  {
+   "id": "mvhz0a1b2c3d4",
+   "date": "2026-10-22",
+   "start": "18:30",
+   "name": "Run in the park",
+   "type": "other",
+   "typeNote": "Run in the park",
+   "minutes": 35,
+   "studio": "",
+   "studioName": "",
+   "friends": [
+    "mvhyu0a1b2c3d"
+   ]
+  }
+ ],
+ "nameFixes": {
+  "FULLBODY ?ORKOUT": "FULLBODY WORKOUT"
+ },
+ "schedule": null,
+ "lastSync": "2026-10-22T09:10:00.000Z",
+ "badgeCount": 2,
+ "schemaVersion": 3,
+ "rewards": [
+  {
+   "at": 2,
+   "text": "New water bottle",
+   "receivedAt": "2026-10-22T19:00:00.000Z"
+  },
+  {
+   "at": 5,
+   "text": "Massage",
+   "receivedAt": null
+  },
+  {
+   "at": 10,
+   "text": "",
+   "receivedAt": null
+  }
+ ],
+ "badgesSeen": [
+  "workouts-1",
+  "friend"
+ ]
+}

@@ -1,5 +1,5 @@
 // Offline support: app shell cache-first, schedule data network-first.
-const CACHE = 'sfp-v7';
+const CACHE = 'sfp-v8';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'js/sync.js', 'js/store.js', 'js/pdfparse.js', 'data/classinfo.json', 'data/glyphs.json', 'data/schedule.json', 'manifest.webmanifest', 'icons/icon-192.png'];
 
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())));

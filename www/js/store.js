@@ -7,11 +7,13 @@
 // Environment-neutral (browser + Node tests): pass in a Storage-like object.
 
 export const STORAGE_KEY = 'sfp.v1';
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export const DEFAULTS = {
   prefs: { studios: [], plan: 'all', day: 'all', tod: 'all', q: '', weeklyGoal: 2, days: [], tods: [], plans: [], allStudios: false },
   agenda: [], friends: [], log: [], nameFixes: {}, schedule: null, lastSync: null,
+  rewards: [{ at: 2, text: '', receivedAt: null }, { at: 5, text: '', receivedAt: null }, { at: 10, text: '', receivedAt: null }],
+  badgesSeen: null,
 };
 
 // MIGRATIONS[n] upgrades data from version n-1 to n. Append only; never edit a released one.
@@ -28,6 +30,14 @@ const MIGRATIONS = {
     if (typeof p.allStudios !== 'boolean') p.allStudios = false;
     return { ...s, prefs: p };
   },
+  // v3 (2026-10-23): log entries may carry type / typeNote / minutes (optional, never back-filled);
+  // self-set rewards at 2, 5 and 10 badges; badgesSeen = badge ids already celebrated
+  // (null until the app first records the badges earned before this version, so they don't pop).
+  3: s => ({
+    ...s,
+    rewards: Array.isArray(s.rewards) ? s.rewards : DEFAULTS.rewards.map(r => ({ ...r })),
+    badgesSeen: Array.isArray(s.badgesSeen) ? s.badgesSeen : null,
+  }),
 };
 
 const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
@@ -42,6 +52,11 @@ export function normalize(s) {
   out.nameFixes = isObj(s.nameFixes) ? s.nameFixes : {};
   if (!('schedule' in out)) out.schedule = null;
   if (!('lastSync' in out)) out.lastSync = null;
+  // Rewards: keep every stored row (and its fields); add any milestone that is missing.
+  out.rewards = arr(s.rewards).filter(isObj).map(r => ({ text: '', receivedAt: null, ...r }));
+  for (const d of DEFAULTS.rewards) if (!out.rewards.some(r => r.at === d.at)) out.rewards.push({ ...d });
+  out.rewards.sort((a, b) => a.at - b.at);
+  if (!('badgesSeen' in out) || (out.badgesSeen !== null && !Array.isArray(out.badgesSeen))) out.badgesSeen = null;
   out.agenda = out.agenda.map(e => ({ status: 'planned', ...e, friends: arr(e?.friends) }));
   out.log = out.log.map(l => ({ ...l, friends: arr(l?.friends) }));
   return out;

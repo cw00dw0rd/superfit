@@ -70,6 +70,16 @@ check('v1 filters convert to v2 arrays', () => {
   assert.deepEqual([all.prefs.days, all.prefs.tods, all.prefs.plans, all.prefs.allStudios], [[], [], [], false]);
 });
 
+// 4c. v2 -> v3: rewards and badgesSeen added; log entries untouched (no type guessed).
+check('v2 upgrade adds rewards and leaves the log as is', () => {
+  const v2 = JSON.parse(fs.readFileSync(new URL('v2.json', dir)));
+  const s = migrate(v2).state;
+  assert.deepEqual(s.rewards.map(r => [r.at, r.text, r.receivedAt]), [[2, '', null], [5, '', null], [10, '', null]]);
+  assert.equal(s.badgesSeen, null);
+  assert.deepEqual(s.log, v2.log.map(l => ({ ...l, friends: l.friends || [] })));
+  assert.ok(s.log.every(l => !('type' in l)));
+});
+
 // 5. Unreadable data is quarantined, never overwritten.
 check('corrupt data is quarantined', () => {
   const st = memory({ [STORAGE_KEY]: '{"agenda": [ broken' });

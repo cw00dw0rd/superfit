@@ -347,8 +347,9 @@ function renderAgenda() {
     ${upcoming.length ? upcoming.map(e => card(e, false)).join('') : `<div class="empty">Nothing planned. Find a class and tap “Add to agenda”.</div>`}
     <div class="actions"><button class="btn plain block" data-act="log-manual">＋ Log another workout</button></div>
     <h2>Completed</h2>
-    ${done.length ? done.slice(0, showAllDone ? done.length : 10).map(l => `<div class="card row"><div class="grow"><div class="name">✓ ${h(l.name)}</div>
-      <div class="muted small">${fmtDate(l.date)}${l.start ? ' ' + l.start : ''}${l.studioName ? ' · ' + h(l.studioName) : ''}${(l.friends || []).length ? ' · 👥 ' + l.friends.length : ''}</div></div>
+    ${done.length ? done.slice(0, showAllDone ? done.length : 10).map(l => `<div class="card row"><div class="grow"><div class="name">${workoutIcon(l)} ${h(l.name)}</div>
+      <div class="muted small">${workoutLine(l)}</div></div>
+      <button class="btn sm plain" data-act="log-edit" data-id="${l.id}" aria-label="Edit workout">✎</button>
       <button class="btn sm plain" data-act="log-del" data-id="${l.id}" aria-label="Delete workout">✕</button></div>`).join('')
       : `<div class="empty">No workouts yet. Tap “I went” after a class, or log one.</div>`}
     ${done.length > 10 && !showAllDone ? `<button class="btn plain block" data-act="show-all-done">Show all (${done.length})</button>` : ''}`;
@@ -414,6 +415,18 @@ function weekKey(s) {
   const y = d.getFullYear(), start = new Date(y, 0, 1);
   return `${y}-W${String(Math.ceil(((d - start) / 864e5 + 1) / 7)).padStart(2, '0')}`;
 }
+const WORKOUT_TYPES = [
+  { id: 'upper', ico: '💪', label: 'Upper body', short: 'Upper' },
+  { id: 'lower', ico: '🦵', label: 'Lower body', short: 'Lower' },
+  { id: 'full', ico: '🏋️', label: 'Full body', short: 'Full' },
+  { id: 'cardio', ico: '🫀', label: 'Cardio', short: 'Cardio' },
+  { id: 'yoga', ico: '🧘', label: 'Yoga', short: 'Yoga' },
+  { id: 'other', ico: '✨', label: 'Other', short: 'Other' },
+];
+const typeById = id => WORKOUT_TYPES.find(t => t.id === id);
+const TYPE_STEP = 5; // a type level every 5 workouts of that type
+const hmMinutes = (a, b) => { const m = s => +s.slice(0, 2) * 60 + +s.slice(3, 5); return a && b ? m(b) - m(a) : null; };
+
 function stats() {
   const log = [...S.log].sort((a, b) => a.date.localeCompare(b.date));
   const goal = S.prefs.weeklyGoal;
@@ -441,8 +454,8 @@ function stats() {
   for (const l of log) {
     points += 10;
     if ((l.friends || []).length) points += 5;
-    const t = l.name.toUpperCase();
-    if (!seen.has(t)) { seen.add(t); points += 15; }
+    const t = (l.name || '').toUpperCase();
+    if (t && !seen.has(t)) { seen.add(t); points += 15; }
   }
   points += streak * 20;
   const studios = new Set(log.map(l => l.studio).filter(Boolean));
@@ -451,36 +464,147 @@ function stats() {
   const weekends = new Set(), satWeeks = new Set(log.filter(l => isoDay(parseYmd(l.date)) === 6).map(l => weekKey(l.date)));
   log.filter(l => isoDay(parseYmd(l.date)) === 7 && satWeeks.has(weekKey(l.date))).forEach(l => weekends.add(weekKey(l.date)));
   const total = log.length;
-  // [icon, name, earned, progress?]; streak badges use the best streak so an earned badge is never lost.
-  // [earned, [have, need], family]; a family is one kind of progress (workouts, streak, ...).
-  const count = (have, need, family) => [have >= need, [Math.min(have, need), need], family];
+  // Workout types: counts per type, and the most different types in any one week / calendar month.
+  const typed = log.filter(l => typeById(l.type));
+  const perType = Object.fromEntries(WORKOUT_TYPES.map(t => [t.id, typed.filter(l => l.type === t.id).length]));
+  const mostTypes = keyOf => {
+    const groups = {};
+    for (const l of typed) (groups[keyOf(l.date)] ||= new Set()).add(l.type);
+    return Math.max(0, ...Object.values(groups).map(g => g.size));
+  };
+  const weekTypes = mostTypes(weekKey), monthTypes = mostTypes(s => s.slice(0, 7));
+
+  // Badge: { id, ico, name, how, earned, prog: [have, need] | null, family }. Ids are stable: they key
+  // "already celebrated" in storage. Streak badges use the best streak so an earned badge is never lost.
+  const count = (id, ico, name, how, have, need, family) => ({ id, ico, name, how, earned: have >= need, prog: [Math.min(have, need), need], family });
+  const flag = (id, ico, name, how, earned) => ({ id, ico, name, how, earned, prog: null, family: id });
+  const workouts = n => `Log ${n} workout${n > 1 ? 's' : ''}: classes you check in to or workouts you log yourself.`;
   const badges = [
-    ['🌱', 'First workout', ...count(total, 1, 'workouts')], ['🔥', '5 workouts', ...count(total, 5, 'workouts')], ['💪', '10 workouts', ...count(total, 10, 'workouts')],
-    ['🏅', '25 workouts', ...count(total, 25, 'workouts')], ['🏆', '50 workouts', ...count(total, 50, 'workouts')], ['👑', '100 workouts', ...count(total, 100, 'workouts')],
-    ['📆', '3-week streak', ...count(longestStreak, 3, 'streak')], ['⚡', '8-week streak', ...count(longestStreak, 8, 'streak')],
-    ['🤝', 'Brought a friend', log.some(l => (l.friends || []).length)],
-    ['🎨', '5 class types', ...count(seen.size, 5, 'types')], ['🧭', '2 studios', ...count(studios.size, 2, 'studios')],
-    ['🌅', 'Early bird (before 9)', log.some(l => l.start && l.start < '09:00')],
-    ['🦉', 'Night owl (20:00+)', log.some(l => l.start && l.start >= '20:00')],
-    ['🎯', 'Weekend warrior', weekends.size > 0],
+    count('workouts-1', '🌱', 'First workout', workouts(1), total, 1, 'workouts'),
+    count('workouts-5', '🔥', '5 workouts', workouts(5), total, 5, 'workouts'),
+    count('workouts-10', '🎖️', '10 workouts', workouts(10), total, 10, 'workouts'),
+    count('workouts-25', '🏅', '25 workouts', workouts(25), total, 25, 'workouts'),
+    count('workouts-50', '🏆', '50 workouts', workouts(50), total, 50, 'workouts'),
+    count('workouts-100', '👑', '100 workouts', workouts(100), total, 100, 'workouts'),
+    count('streak-3', '📆', '3-week streak', 'Meet your weekly goal 3 weeks in a row.', longestStreak, 3, 'streak'),
+    count('streak-8', '⚡', '8-week streak', 'Meet your weekly goal 8 weeks in a row.', longestStreak, 8, 'streak'),
+    flag('friend', '🤝', 'Brought a friend', 'Log a workout with a friend: tick them when you log it, or invite them to a planned class and check in.', log.some(l => (l.friends || []).length)),
+    count('classes-5', '🎨', '5 class types', 'Do 5 different classes or workouts (by name).', seen.size, 5, 'classes'),
+    count('studios-2', '🧭', '2 studios', 'Work out at 2 different Superfit studios.', studios.size, 2, 'studios'),
+    count('mixed-week', '🌈', 'Mixed week', 'Log 3 different workout types in one week (Mon–Sun).', weekTypes, 3, 'mixed-week'),
+    count('allround-month', '🗺️', 'All-rounder month', 'Log 5 different workout types in one calendar month.', monthTypes, 5, 'allround-month'),
+    flag('early', '🌅', 'Early bird', 'Log a workout that starts before 09:00.', log.some(l => l.start && l.start < '09:00')),
+    flag('night', '🦉', 'Night owl', 'Log a workout that starts at 20:00 or later.', log.some(l => l.start && l.start >= '20:00')),
+    flag('weekend', '🎯', 'Weekend warrior', 'Work out on both Saturday and Sunday of the same weekend.', weekends.size > 0),
+    // One tile per workout type; every TYPE_STEP workouts of that type is the next level (each level is a badge).
+    ...WORKOUT_TYPES.map(t => {
+      const n = perType[t.id], lvl = Math.floor(n / TYPE_STEP), next = (lvl + 1) * TYPE_STEP;
+      return { id: `type-${t.id}`, ico: t.ico, name: t.label, level: lvl, earned: lvl > 0, prog: [n, next], family: `type-${t.id}`,
+        how: `Every ${TYPE_STEP} ${t.label.toLowerCase()} workouts earns the next level. Pick “${t.short}” when you log, or check in to a ${t.label.toLowerCase()} class.` };
+    }),
   ];
-  // Badges in progress: the nearest locked badge of each family, closest to done first, at most 3.
-  // Only families with some progress are shown; with none at all, the single nearest badge is.
+  // Earned badge ids; a type tile contributes one id per level reached.
+  const earnedIds = badges.flatMap(b => (b.level !== undefined ? Array.from({ length: b.level }, (_, i) => `${b.id}-${i + 1}`) : b.earned ? [b.id] : []));
+
+  // Badges in progress: the nearest unfinished badge of each kind, closest to done first, at most 3.
+  // Only kinds with some progress are shown; with none at all, the single nearest badge is.
   const nearest = {};
-  for (const [ico, name, ok, prog, family] of badges) {
-    if (ok || !prog) continue;
-    if (!nearest[family] || prog[1] < nearest[family].need) nearest[family] = { ico, name, have: prog[0], need: prog[1] };
+  for (const b of badges) {
+    if (!b.prog || (b.earned && b.level === undefined)) continue;
+    const [have, need] = b.prog;
+    const name = b.level !== undefined ? `${b.name} level ${b.level + 1}` : b.name;
+    if (!nearest[b.family] || need < nearest[b.family].need) nearest[b.family] = { id: b.id, ico: b.ico, name, have, need };
   }
   const byRatio = (a, b) => b.have / b.need - a.have / a.need || a.need - b.need;
   const open = Object.values(nearest).sort(byRatio);
-  const nextBadges = open.some(b => b.have > 0) ? open.filter(b => b.have > 0).slice(0, 3) : open.slice(0, 1);
+  const nextBadges = open.some(b => b.have > 0) ? open.filter(b => b.have > 0).slice(0, 3) : open.filter(b => b.id === 'workouts-1').slice(0, 1);
   const nextBadge = nextBadges[0] || null;
-  return { total, thisWeek, goal, streak, longestStreak, nextBadge, nextBadges, points, level: LEVELS[Math.min(level, LEVELS.length - 1)], levelProgress: (points % 150) / 150, badges, types: seen.size };
+  return { total, thisWeek, goal, streak, longestStreak, nextBadge, nextBadges, points, level: LEVELS[Math.min(level, LEVELS.length - 1)], levelProgress: (points % 150) / 150, badges, earnedIds, types: seen.size };
 }
 
-function renderProgress() {
+// Display info for an earned id (type levels are "type-cardio-2").
+function badgeView(id, s = stats()) {
+  const m = id.match(/^(type-[a-z]+)-(\d+)$/);
+  const b = s.badges.find(x => x.id === (m ? m[1] : id));
+  return b && { ...b, title: m ? `${b.name} · level ${m[2]}` : b.name };
+}
+
+// ---------- celebrations ----------
+const celebrations = [];
+function celebrate(ico, title, sub, { big = false, onDone } = {}) {
+  celebrations.push({ ico, title, sub, big, onDone });
+  if (celebrations.length === 1) showCelebration();
+}
+function showCelebration() {
+  const c = celebrations[0];
+  if (!c) return;
+  const el = document.createElement('div');
+  el.className = `celebrate ${c.big ? 'big' : ''}`;
+  el.setAttribute('role', 'alert');
+  const dots = Array.from({ length: c.big ? 20 : 12 }, (_, i) => `<i style="--a:${(360 / (c.big ? 20 : 12)) * i}deg;--d:${i % 3}"></i>`).join('');
+  el.innerHTML = `<div class="cel-card"><div class="cel-burst" aria-hidden="true">${dots}</div><div class="cel-ico">${c.ico}</div>
+    <div class="cel-title">${h(c.title)}</div>${c.sub ? `<div class="cel-sub">${h(c.sub)}</div>` : ''}<div class="cel-hint">Tap to continue</div></div>`;
+  let closed = false;
+  const close = () => {
+    if (closed) return; closed = true;
+    el.classList.add('out');
+    setTimeout(() => { el.remove(); celebrations.shift(); c.onDone?.(); showCelebration(); }, 200);
+  };
+  el.addEventListener('click', close);
+  setTimeout(close, c.big ? 4000 : 2600);
+  document.body.append(el);
+}
+
+// Celebrates badges earned since last time. The first run after an upgrade only records what was
+// already earned, so existing users don't get a flood of pop-ups.
+function checkNewBadges() {
   const s = stats();
+  if (!Array.isArray(S.badgesSeen)) { S.badgesSeen = s.earnedIds; save(); return; }
+  const fresh = s.earnedIds.filter(id => !S.badgesSeen.includes(id));
+  if (!fresh.length) return;
+  S.badgesSeen = [...S.badgesSeen, ...fresh];
+  save();
+  for (const id of fresh) { const v = badgeView(id, s); if (v) celebrate(v.ico, 'Badge earned!', v.title); }
+}
+
+function badgeSheet(id) {
+  const b = stats().badges.find(x => x.id === id);
+  if (!b) return;
+  const isType = b.level !== undefined;
+  const [have, need] = b.prog || [];
+  const status = isType
+    ? (b.level ? `Level ${b.level} reached · ${have}/${need} to level ${b.level + 1}` : `${have}/${need} to level 1`)
+    : b.earned ? 'Earned ✓' : b.prog ? `${have}/${need}` : 'Locked';
+  modal(`<div class="badge-detail ${b.earned ? '' : 'locked'}">
+      <div class="bd-ico">${b.ico}</div><h3>${h(isType ? `${b.name} workouts` : b.name)}</h3>
+      <p>${h(b.how)}</p>
+      ${b.prog ? `<div class="bar"><div style="width:${Math.min(100, (have / need) * 100)}%"></div></div>` : ''}
+      <p class="small ${b.earned ? '' : 'muted'}"><b>${status}</b></p>
+    </div>`);
+}
+
+const workoutLine = l => `${fmtDate(l.date)}${l.start ? ' ' + l.start : ''}${l.minutes ? ` · ${l.minutes} min` : ''}${l.studioName ? ' · ' + h(l.studioName) : ''}${(l.friends || []).length ? ' · 👥 ' + l.friends.length : ''}`;
+const workoutIcon = l => typeById(l.type)?.ico || '✓';
+
+function renderProgress() {
+  const s = stats(), earned = s.earnedIds.length;
   const recent = [...S.log].sort((a, b) => (b.date + (b.start || '')).localeCompare(a.date + (a.start || ''))).slice(0, 15);
+  const tile = b => {
+    const isType = b.level !== undefined;
+    const sub = isType ? `<span class="prog">${b.level ? `Level ${b.level} · ` : ''}${b.prog[0]}/${b.prog[1]}</span>`
+      : !b.earned && b.prog ? `<span class="prog">${b.prog[0]}/${b.prog[1]}</span>` : '';
+    return `<button class="badge-tile ${b.earned ? '' : 'locked'}" data-act="badge" data-id="${b.id}" aria-label="${h(b.name)}${b.earned ? ', earned' : ''}"><span class="ico">${b.ico}</span>${h(b.name)}${sub}</button>`;
+  };
+  const reward = r => {
+    const state = r.receivedAt ? 'received' : earned >= r.at ? 'ready' : 'locked';
+    return `<div class="reward ${state}">
+      <div class="rw-at">🎁 <b>${r.at}</b><span class="small muted">badges</span></div>
+      <input data-reward="${r.at}" value="${h(r.text)}" placeholder="Your reward, e.g. new gym bag" maxlength="80" ${r.receivedAt ? 'disabled' : ''}>
+      ${state === 'received' ? `<span class="rw-state small">✓ ${fmtDate(r.receivedAt.slice(0, 10))}</span>`
+        : state === 'ready' ? `<button class="btn sm" data-act="reward-claim" data-id="${r.at}">Mark received</button>`
+        : `<span class="rw-state small muted">${r.at - earned} more</span>`}
+    </div>`;
+  };
   $('#view').innerHTML = `
     <div class="card">
       <div class="row between"><b>This week</b><span>${s.thisWeek} / ${s.goal}</span></div>
@@ -490,27 +614,97 @@ function renderProgress() {
     <div class="card stat-grid">
       <div class="stat"><b>${s.streak}</b><span class="small muted">week streak · best ${s.longestStreak}</span></div>
       <div class="stat"><b>${s.total}</b><span class="small muted">workouts</span></div>
-      <div class="stat"><b>${s.points}</b><span class="small muted">points</span></div>
+      <div class="stat"><b>${earned}</b><span class="small muted">badges</span></div>
     </div>
-    <div class="card"><div class="row between"><b>Level: ${s.level}</b><span class="small muted">${s.types} class types tried</span></div>
+    <div class="card"><div class="row between"><b>Level: ${s.level}</b><span class="small muted">${s.points} points</span></div>
       <div class="bar"><div style="width:${s.levelProgress * 100}%"></div></div></div>
+    <h2>Rewards</h2>
+    <div class="card rewards"><p class="small muted">Set yourself a reward for each milestone. You can mark it received once you have that many badges.</p>
+      ${S.rewards.map(reward).join('')}</div>
+    <h2>Workout types</h2>
+    <div class="badges">${s.badges.filter(b => b.level !== undefined).map(tile).join('')}</div>
     <h2>Badges</h2>
-    <div class="badges">${s.badges.map(([ico, name, ok, prog]) => `<div class="badge-tile ${ok ? '' : 'locked'}"><span class="ico">${ico}</span>${h(name)}${!ok && prog ? `<span class="prog">${prog[0]}/${prog[1]}</span>` : ''}</div>`).join('')}</div>
+    <div class="badges">${s.badges.filter(b => b.level === undefined).map(tile).join('')}</div>
     <h2>Recent workouts</h2>
-    ${recent.length ? recent.map(l => `<div class="card row"><div class="grow"><div class="name">${h(l.name)}</div>
-      <div class="muted small">${fmtDate(l.date)}${l.start ? ' ' + l.start : ''}${l.studioName ? ' · ' + h(l.studioName) : ''}${(l.friends || []).length ? ' · 👥 ' + l.friends.length : ''}</div></div>
-      <button class="btn sm plain" data-act="log-del" data-id="${l.id}">✕</button></div>`).join('') : `<div class="empty">Mark agenda classes as done to start tracking.</div>`}
+    ${recent.length ? recent.map(l => `<div class="card row"><div class="grow"><div class="name">${workoutIcon(l)} ${h(l.name)}</div>
+      <div class="muted small">${workoutLine(l)}</div></div>
+      <button class="btn sm plain" data-act="log-edit" data-id="${l.id}" aria-label="Edit workout">✎</button>
+      <button class="btn sm plain" data-act="log-del" data-id="${l.id}" aria-label="Delete workout">✕</button></div>`).join('') : `<div class="empty">Mark agenda classes as done to start tracking.</div>`}
     <div class="actions"><button class="btn plain block" data-act="log-manual">＋ Log a workout</button></div>
-    <p class="small muted">Points: 10 per workout, +5 with a friend, +15 for a new class type, +20 per streak week.</p>`;
+    <p class="small muted">Points: 10 per workout, +5 with a friend, +15 for a new class or workout, +20 per streak week. Tap a badge to see how to earn it.</p>`;
 }
 
 function logWorkout(entry) {
-  S.log.push({ id: uid(), ...entry });
+  const e = { id: uid(), ...entry };
+  S.log.push(e);
   save();
-  const s = stats();
-  const earned = s.badges.filter(b => b[2]).length;
-  if (earned > (S.badgeCount || 0)) { toast(`🏅 New badge! (${earned} earned)`); S.badgeCount = earned; save(); }
-  else toast(`+ workout logged · ${s.thisWeek}/${s.goal} this week`);
+  return e;
+}
+
+// ---------- log form (minimal: type + Save; everything else optional) ----------
+let logForm = null;
+function openLogForm(existing) {
+  logForm = existing
+    ? { editId: existing.id, type: existing.type || '', note: existing.typeNote || '', friends: [...(existing.friends || [])], minutes: existing.minutes || null, showTime: !!existing.minutes }
+    : { editId: null, type: '', note: '', friends: [], minutes: null, showTime: false };
+  const l = existing || {};
+  modal(`<h3>${existing ? 'Edit workout' : 'Log a workout'}</h3>
+    ${existing?.classId ? `<p class="small muted">${h(existing.name)}</p>` : ''}
+    <div class="typegrid" role="radiogroup" aria-label="Workout type">${WORKOUT_TYPES.map(t => `<button class="typebtn" role="radio" aria-checked="false" data-act="lf-type" data-id="${t.id}"><span>${t.ico}</span>${t.short}</button>`).join('')}</div>
+    <div id="lf-other" hidden><input id="lf-note" placeholder="What was it? (optional)" maxlength="60" value="${h(logForm.note)}"></div>
+    <div class="lf-row">
+      <input id="lf-date" type="date" value="${l.date || todayYmd()}" aria-label="Date">
+      <select id="lf-studio" aria-label="Studio"><option value="">No studio</option>${schedule.studios.map(s => `<option value="${h(s.id)}" ${s.id === l.studio ? 'selected' : ''}>${h(s.name)}</option>`).join('')}</select>
+      <button class="clock" data-act="lf-time" aria-label="Add duration" aria-expanded="false">⏱</button>
+    </div>
+    <div id="lf-times" class="segrow" hidden>${[30, 45, 60, 90].map(m => `<button class="seg" data-act="lf-min" data-id="${m}">${m} min</button>`).join('')}<input id="lf-min" type="number" min="1" max="600" inputmode="numeric" placeholder="min" aria-label="Minutes"></div>
+    ${S.friends.length ? `<div class="lf-friends" aria-label="Friends who came">👥 ${S.friends.map(f => `<button class="chip" data-act="lf-friend" data-id="${f.id}">${h(f.name)}</button>`).join('')}</div>` : ''}
+    <div class="actions"><button class="btn block" data-act="log-save">Save</button></div>`, syncLogForm);
+}
+function syncLogForm() {
+  const f = logForm;
+  document.querySelectorAll('.typebtn').forEach(b => { const on = b.dataset.id === f.type; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
+  $('#lf-other').hidden = f.type !== 'other';
+  $('#lf-times').hidden = !f.showTime;
+  document.querySelector('.clock')?.setAttribute('aria-expanded', f.showTime);
+  document.querySelector('.clock')?.classList.toggle('on', f.showTime || !!f.minutes);
+  document.querySelectorAll('[data-act=lf-min]').forEach(b => b.classList.toggle('on', +b.dataset.id === f.minutes));
+  const custom = $('#lf-min');
+  if (custom && document.activeElement !== custom) custom.value = f.minutes && ![30, 45, 60, 90].includes(f.minutes) ? f.minutes : '';
+  document.querySelectorAll('[data-act=lf-friend]').forEach(b => b.classList.toggle('on', f.friends.includes(b.dataset.id)));
+}
+function saveLogForm() {
+  const f = logForm;
+  if (!f.type) { toast('Pick a workout type'); document.querySelector('.typegrid')?.classList.add('shake'); setTimeout(() => document.querySelector('.typegrid')?.classList.remove('shake'), 400); return; }
+  const t = typeById(f.type), note = ($('#lf-note')?.value || '').trim();
+  const sid = $('#lf-studio').value, date = $('#lf-date').value || todayYmd();
+  const fields = { type: f.type, date, studio: sid, studioName: sid ? studioById(sid).name : '', friends: f.friends,
+    ...(f.minutes ? { minutes: f.minutes } : {}), ...(f.type === 'other' && note ? { typeNote: note } : {}) };
+  if (f.editId) {
+    const e = S.log.find(l => l.id === f.editId);
+    if (!e.classId) e.name = f.type === 'other' && note ? note : t.label;
+    Object.assign(e, fields);
+    if (!f.minutes) delete e.minutes; // the user cleared it in this edit
+    if (f.type !== 'other') delete e.typeNote;
+    save(); closeModal(); render(); toast('Workout updated');
+  } else {
+    logWorkout({ name: f.type === 'other' && note ? note : t.label, ...fields });
+    closeModal(); render();
+    const s = stats(); toast(`+ ${t.label} logged · ${s.thisWeek}/${s.goal} this week`);
+  }
+  checkNewBadges();
+}
+
+// One-tap check-in for a planned class: type from the class, minutes from its length, friends from the invite.
+function checkIn(ent) {
+  ent.status = 'done';
+  const c = schedule.classes.find(x => x.id === ent.classId) || { name: ent.name, brand: '', tags: [] };
+  const type = classInfo(c)?.type || 'other', minutes = hmMinutes(ent.start, ent.end);
+  const e = logWorkout({ date: ent.date, start: ent.start, name: ent.name, studio: ent.studio, studioName: ent.studioName, classId: ent.classId,
+    friends: ent.friends || [], type, ...(minutes > 0 ? { minutes } : {}) });
+  render();
+  toast(`Logged ${ent.name} · ${typeById(type).label}${minutes > 0 ? ` · ${minutes} min` : ''}`, [{ label: 'Edit', act: 'log-edit', id: e.id }]);
+  checkNewBadges();
 }
 
 // ---------- settings & sync ----------
@@ -643,7 +837,10 @@ document.querySelector('.tabbar').addEventListener('click', e => {
 });
 
 document.addEventListener('input', e => {
-  if (e.target.id === 'q') { S.prefs.q = e.target.value; save(); renderResults(); }
+  const t = e.target;
+  if (t.id === 'q') { S.prefs.q = t.value; save(); renderResults(); }
+  else if (t.id === 'lf-min' && logForm) { const m = parseInt(t.value, 10); logForm.minutes = m > 0 ? m : null; syncLogForm(); }
+  else if (t.dataset.reward) { const r = S.rewards.find(x => x.at === +t.dataset.reward); if (r && !r.receivedAt) { r.text = t.value; save(); } }
 });
 
 document.addEventListener('change', e => {
@@ -704,22 +901,29 @@ document.addEventListener('click', async e => {
       break;
     }
     case 'remove': S.agenda = S.agenda.filter(a => a.id !== id); save(); render(); break;
-    case 'done': {
-      const ent = agendaEntry(id); ent.status = 'done'; save();
-      logWorkout({ date: ent.date, start: ent.start, name: ent.name, studio: ent.studio, studioName: ent.studioName, classId: ent.classId, friends: ent.friends });
-      render(); break;
-    }
+    case 'done': checkIn(agendaEntry(id)); break;
     case 'missed': agendaEntry(id).status = 'missed'; save(); render(); break;
-    case 'log-manual': modal(`<h3>Log a workout</h3>
-        <label>What did you do?</label><input id="lm-name" placeholder="e.g. Free weights, Run">
-        <label>Date</label><input id="lm-date" type="date" value="${todayYmd()}">
-        <label>Studio</label><select id="lm-studio"><option value="">(none)</option>${schedule.studios.map(s => `<option value="${h(s.id)}">${h(s.name)}</option>`).join('')}</select>
-        <div class="actions"><button class="btn block" data-act="log-save">Save</button></div>`); break;
-    case 'log-save': {
-      const name = $('#lm-name').value.trim(); if (!name) return toast('Enter a name');
-      const sid = $('#lm-studio').value;
-      logWorkout({ date: $('#lm-date').value || todayYmd(), name, studio: sid, studioName: sid ? studioById(sid).name : '', friends: [] });
-      closeModal(); render(); break;
+    case 'log-manual': openLogForm(); break;
+    case 'log-edit': { const e = S.log.find(l => l.id === id); if (e) { $('#toast').hidden = true; openLogForm(e); } break; }
+    case 'lf-type': logForm.type = id; syncLogForm(); if (id === 'other') $('#lf-note')?.focus(); break;
+    case 'lf-time': logForm.showTime = !logForm.showTime; syncLogForm(); break;
+    case 'lf-min': logForm.minutes = logForm.minutes === +id ? null : +id; syncLogForm(); break;
+    case 'lf-friend': logForm.friends = toggle(logForm.friends, id); syncLogForm(); break;
+    case 'log-save': saveLogForm(); break;
+    case 'badge': {
+      const v = stats().badges.find(b => b.id === id);
+      if (v?.earned) celebrate(v.ico, v.level ? `${v.name} · level ${v.level}` : v.name, 'Badge earned ✓', { onDone: () => badgeSheet(id) });
+      else badgeSheet(id);
+      break;
+    }
+    case 'reward-claim': {
+      const r = S.rewards.find(x => x.at === +id), earned = stats().earnedIds.length;
+      if (!r || earned < r.at) return toast(`You need ${r.at} badges for this reward`);
+      const input = document.querySelector(`[data-reward="${r.at}"]`);
+      if (input) r.text = input.value.trim();
+      r.receivedAt = new Date().toISOString(); save(); renderProgress();
+      celebrate('🎁', 'Reward unlocked!', r.text || `${r.at} badges reached`, { big: true });
+      break;
     }
     case 'log-del': S.log = S.log.filter(l => l.id !== id); save(); render(); break;
     case 'show-all-done': showAllDone = true; renderAgenda(); break;
@@ -763,6 +967,7 @@ async function importBackup(file) {
 // ---------- boot ----------
 await loadData();
 render();
+checkNewBadges(); // first run after an upgrade records already-earned badges without pop-ups
 if (loaded.corrupt) toast('Saved data could not be read; a copy was kept. Restore a backup in Settings.');
 else if (loaded.newer) toast('This data is from a newer app version. Reload to update the app.');
 // Ask the browser not to evict our local data (matters most on iPhone).
