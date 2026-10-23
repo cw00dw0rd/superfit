@@ -13,7 +13,7 @@ track workouts. There's no backend: all data lives on the device.
   a Google Calendar link with your friends' emails pre-filled as guests (saving it sends real invites), or an `.ics` file.
 - **Friends**: added by hand, or picked from contacts where the browser supports it (Chrome on Android).
 - **Workout tracking and gamification**: log a workout in two taps (type: Upper, Lower, Full body, Cardio, Yoga, Other; optional date, studio, friends, duration behind ⏱), or check in to a planned class in one tap (type, duration and friends filled in, with Edit). Weekly goal, week streak (current and best), points, levels.
-- **Badges and rewards**: badges pop with an animation when earned and replay when tapped; every badge shows how to earn it. Workout-type tiles level up every 5 workouts; variety badges (Mixed week, All-rounder month). Set your own rewards for 2, 5 and 10 badges and mark them received once earned.
+- **Badges and rewards**: badges pop with an animation when earned and replay when tapped; every badge shows how to earn it. Workout-type tiles level up every 5 workouts; variety badges (Mixed week, All-rounder month); workout-length badges (First hour, Hour club levels every 5 hour-long workouts of 50+ min, Hour habit, Time trained levels every 10 h, Long haul, Big week, Quick hit). Set your own rewards for 2, 5 and 10 badges and mark them received once earned.
 - **Schedule updates**: "Check superfit.club for changes" crawls the studio overview, finds each studio's plan PDFs,
   and re-parses only those whose URL changed (Webflow gives re-uploads a new URL). It then shows what was added or removed.
   "Import plan PDFs" parses PDFs you've downloaded yourself.

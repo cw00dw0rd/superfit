@@ -200,7 +200,7 @@ function snapshotHtml() {
         <span>🔥 <b>${s.streak}</b> wk streak <span class="muted">(best ${s.longestStreak})</span></span>
         <span>This week <b>${s.thisWeek}/${s.goal}</b> <span class="minibar"><i style="width:${Math.min(100, (s.thisWeek / s.goal) * 100)}%"></i></span></span>
         ${s.nextBadges.length ? `<span class="badge-prog"><span class="muted small">${s.nextBadges.length > 1 ? 'Badges in progress' : 'Next badge'}</span>
-          ${s.nextBadges.map(b => `<span class="bp"><span>${b.ico} ${h(b.name)}</span><b>${b.have}/${b.need}</b><span class="minibar"><i style="width:${(b.have / b.need) * 100}%"></i></span></span>`).join('')}</span>`
+          ${s.nextBadges.map(b => `<span class="bp"><span>${b.ico} ${h(b.name)}</span><b>${frac(b.have, b.need, b.unit)}</b><span class="minibar"><i style="width:${(b.have / b.need) * 100}%"></i></span></span>`).join('')}</span>`
           : `<span>All badges earned</span>`}
       </div>
       <button class="jump" data-act="goto" data-id="progress"><span class="ico">🏆</span>All badges</button>
@@ -425,6 +425,8 @@ const WORKOUT_TYPES = [
 ];
 const typeById = id => WORKOUT_TYPES.find(t => t.id === id);
 const TYPE_STEP = 5; // a type level every 5 workouts of that type
+const frac = (have, need, unit) => `${have}/${need}${unit ? ' ' + unit : ''}`;
+const isTypeBadge = b => b.id.startsWith('type-');
 const hmMinutes = (a, b) => { const m = s => +s.slice(0, 2) * 60 + +s.slice(3, 5); return a && b ? m(b) - m(a) : null; };
 
 function stats() {
@@ -473,13 +475,28 @@ function stats() {
     return Math.max(0, ...Object.values(groups).map(g => g.size));
   };
   const weekTypes = mostTypes(weekKey), monthTypes = mostTypes(s => s.slice(0, 7));
+  // Workout length (only entries with a logged duration count). "Hour-long" = 50+ min: a standard Superfit class slot.
+  const timed = log.filter(l => l.minutes > 0), HOUR = 50;
+  const totalMin = timed.reduce((a, l) => a + l.minutes, 0);
+  const longest = Math.max(0, ...timed.map(l => l.minutes));
+  const hourLong = timed.filter(l => l.minutes >= HOUR);
+  const bestWeek = list => { const w = {}; for (const l of list) w[weekKey(l.date)] = (w[weekKey(l.date)] || 0) + (l.minutes || 1); return Math.max(0, ...Object.values(w)); };
+  const bestWeekMin = bestWeek(timed), bestWeekHours = bestWeek(hourLong.map(l => ({ date: l.date, minutes: 1 })));
+  const quick = timed.filter(l => l.minutes <= 30).length;
+  const hours = Math.floor(totalMin / 60);
 
   // Badge: { id, ico, name, how, earned, prog: [have, need] | null, family }. Ids are stable: they key
   // "already celebrated" in storage. Streak badges use the best streak so an earned badge is never lost.
-  const count = (id, ico, name, how, have, need, family) => ({ id, ico, name, how, earned: have >= need, prog: [Math.min(have, need), need], family });
+  const count = (id, ico, name, how, have, need, family, unit) => ({ id, ico, name, how, earned: have >= need, prog: [Math.min(have, need), need], family, unit });
+  // A level tile: level n at n * step (each level is one badge).
+  const levels = (id, ico, name, how, have, step, unit) => { const lvl = Math.floor(have / step); return { id, ico, name, how, level: lvl, earned: lvl > 0, prog: [have, (lvl + 1) * step], family: id, unit }; };
+  const timeHint = ' Add a duration with ⏱ when you log; classes you check in to count their length.';
   const flag = (id, ico, name, how, earned) => ({ id, ico, name, how, earned, prog: null, family: id });
   const workouts = n => `Log ${n} workout${n > 1 ? 's' : ''}: classes you check in to or workouts you log yourself.`;
   const badges = [
+    count('hour-1', '🕐', 'First hour', `Do a workout of about an hour (${HOUR} minutes or more, so a standard Superfit class counts).` + timeHint, longest, HOUR, 'hour-1', 'min'),
+    levels('hour-club', '💯', 'Hour club', `Every 5 hour-long workouts (${HOUR}+ minutes) earns the next level.` + timeHint, hourLong.length, 5),
+    count('hour-week-3', '🔁', 'Hour habit', `Do 3 hour-long workouts (${HOUR}+ minutes) in one week (Mon–Sun).` + timeHint, bestWeekHours, 3, 'hour-week'),
     count('workouts-1', '🌱', 'First workout', workouts(1), total, 1, 'workouts'),
     count('workouts-5', '🔥', '5 workouts', workouts(5), total, 5, 'workouts'),
     count('workouts-10', '🎖️', '10 workouts', workouts(10), total, 10, 'workouts'),
@@ -488,6 +505,10 @@ function stats() {
     count('workouts-100', '👑', '100 workouts', workouts(100), total, 100, 'workouts'),
     count('streak-3', '📆', '3-week streak', 'Meet your weekly goal 3 weeks in a row.', longestStreak, 3, 'streak'),
     count('streak-8', '⚡', '8-week streak', 'Meet your weekly goal 8 weeks in a row.', longestStreak, 8, 'streak'),
+    levels('time-trained', '⏱️', 'Time trained', 'Every 10 hours of logged workout time earns the next level.' + timeHint, hours, 10, 'h'),
+    count('long-90', '🏃', 'Long haul', 'Do one workout of 90 minutes or more.' + timeHint, longest, 90, 'long-90', 'min'),
+    count('week-300', '📈', 'Big week', 'Log 5 hours of workouts in one week (Mon–Sun).' + timeHint, Math.floor(bestWeekMin / 6) / 10, 5, 'week-300', 'h'),
+    count('quick-5', '💨', 'Quick hit', 'Log 5 short workouts of 30 minutes or less.' + timeHint, quick, 5, 'quick-5'),
     flag('friend', '🤝', 'Brought a friend', 'Log a workout with a friend: tick them when you log it, or invite them to a planned class and check in.', log.some(l => (l.friends || []).length)),
     count('classes-5', '🎨', '5 class types', 'Do 5 different classes or workouts (by name).', seen.size, 5, 'classes'),
     count('studios-2', '🧭', '2 studios', 'Work out at 2 different Superfit studios.', studios.size, 2, 'studios'),
@@ -513,20 +534,21 @@ function stats() {
     if (!b.prog || (b.earned && b.level === undefined)) continue;
     const [have, need] = b.prog;
     const name = b.level !== undefined ? `${b.name} level ${b.level + 1}` : b.name;
-    if (!nearest[b.family] || need < nearest[b.family].need) nearest[b.family] = { id: b.id, ico: b.ico, name, have, need };
+    if (!nearest[b.family] || need < nearest[b.family].need) nearest[b.family] = { id: b.id, ico: b.ico, name, have, need, unit: b.unit };
   }
   const byRatio = (a, b) => b.have / b.need - a.have / a.need || a.need - b.need;
   const open = Object.values(nearest).sort(byRatio);
   const nextBadges = open.some(b => b.have > 0) ? open.filter(b => b.have > 0).slice(0, 3) : open.filter(b => b.id === 'workouts-1').slice(0, 1);
   const nextBadge = nextBadges[0] || null;
-  return { total, thisWeek, goal, streak, longestStreak, nextBadge, nextBadges, points, level: LEVELS[Math.min(level, LEVELS.length - 1)], levelProgress: (points % 150) / 150, badges, earnedIds, types: seen.size };
+  return { total, thisWeek, goal, streak, longestStreak, nextBadge, nextBadges, points, hours, level: LEVELS[Math.min(level, LEVELS.length - 1)], levelProgress: (points % 150) / 150, badges, earnedIds, types: seen.size };
 }
 
 // Display info for an earned id (type levels are "type-cardio-2").
 function badgeView(id, s = stats()) {
-  const m = id.match(/^(type-[a-z]+)-(\d+)$/);
-  const b = s.badges.find(x => x.id === (m ? m[1] : id));
-  return b && { ...b, title: m ? `${b.name} · level ${m[2]}` : b.name };
+  const exact = s.badges.find(x => x.id === id);
+  if (exact) return { ...exact, title: exact.name };
+  const m = id.match(/^(.+)-(\d+)$/), b = m && s.badges.find(x => x.id === m[1] && x.level !== undefined);
+  return b && { ...b, title: `${b.name} · level ${m[2]}` };
 }
 
 // ---------- celebrations ----------
@@ -570,13 +592,13 @@ function checkNewBadges() {
 function badgeSheet(id) {
   const b = stats().badges.find(x => x.id === id);
   if (!b) return;
-  const isType = b.level !== undefined;
+  const isLevel = b.level !== undefined;
   const [have, need] = b.prog || [];
-  const status = isType
-    ? (b.level ? `Level ${b.level} reached · ${have}/${need} to level ${b.level + 1}` : `${have}/${need} to level 1`)
-    : b.earned ? 'Earned ✓' : b.prog ? `${have}/${need}` : 'Locked';
+  const status = isLevel
+    ? (b.level ? `Level ${b.level} reached · ${frac(have, need, b.unit)} to level ${b.level + 1}` : `${frac(have, need, b.unit)} to level 1`)
+    : b.earned ? 'Earned ✓' : b.prog ? frac(have, need, b.unit) : 'Locked';
   modal(`<div class="badge-detail ${b.earned ? '' : 'locked'}">
-      <div class="bd-ico">${b.ico}</div><h3>${h(isType ? `${b.name} workouts` : b.name)}</h3>
+      <div class="bd-ico">${b.ico}</div><h3>${h(isTypeBadge(b) ? `${b.name} workouts` : b.name)}</h3>
       <p>${h(b.how)}</p>
       ${b.prog ? `<div class="bar"><div style="width:${Math.min(100, (have / need) * 100)}%"></div></div>` : ''}
       <p class="small ${b.earned ? '' : 'muted'}"><b>${status}</b></p>
@@ -590,9 +612,8 @@ function renderProgress() {
   const s = stats(), earned = s.earnedIds.length;
   const recent = [...S.log].sort((a, b) => (b.date + (b.start || '')).localeCompare(a.date + (a.start || ''))).slice(0, 15);
   const tile = b => {
-    const isType = b.level !== undefined;
-    const sub = isType ? `<span class="prog">${b.level ? `Level ${b.level} · ` : ''}${b.prog[0]}/${b.prog[1]}</span>`
-      : !b.earned && b.prog ? `<span class="prog">${b.prog[0]}/${b.prog[1]}</span>` : '';
+    const sub = b.level !== undefined ? `<span class="prog">${b.level ? `Level ${b.level} · ` : ''}${frac(b.prog[0], b.prog[1], b.unit)}</span>`
+      : !b.earned && b.prog ? `<span class="prog">${frac(b.prog[0], b.prog[1], b.unit)}</span>` : '';
     return `<button class="badge-tile ${b.earned ? '' : 'locked'}" data-act="badge" data-id="${b.id}" aria-label="${h(b.name)}${b.earned ? ', earned' : ''}"><span class="ico">${b.ico}</span>${h(b.name)}${sub}</button>`;
   };
   const reward = r => {
@@ -616,15 +637,15 @@ function renderProgress() {
       <div class="stat"><b>${s.total}</b><span class="small muted">workouts</span></div>
       <div class="stat"><b>${earned}</b><span class="small muted">badges</span></div>
     </div>
-    <div class="card"><div class="row between"><b>Level: ${s.level}</b><span class="small muted">${s.points} points</span></div>
+    <div class="card"><div class="row between"><b>Level: ${s.level}</b><span class="small muted">${s.points} points · ${s.hours} h trained</span></div>
       <div class="bar"><div style="width:${s.levelProgress * 100}%"></div></div></div>
     <h2>Rewards</h2>
     <div class="card rewards"><p class="small muted">Set yourself a reward for each milestone. You can mark it received once you have that many badges.</p>
       ${S.rewards.map(reward).join('')}</div>
     <h2>Workout types</h2>
-    <div class="badges">${s.badges.filter(b => b.level !== undefined).map(tile).join('')}</div>
+    <div class="badges">${s.badges.filter(isTypeBadge).map(tile).join('')}</div>
     <h2>Badges</h2>
-    <div class="badges">${s.badges.filter(b => b.level === undefined).map(tile).join('')}</div>
+    <div class="badges">${s.badges.filter(b => !isTypeBadge(b)).map(tile).join('')}</div>
     <h2>Recent workouts</h2>
     ${recent.length ? recent.map(l => `<div class="card row"><div class="grow"><div class="name">${workoutIcon(l)} ${h(l.name)}</div>
       <div class="muted small">${workoutLine(l)}</div></div>
