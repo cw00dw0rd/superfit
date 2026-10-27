@@ -400,8 +400,12 @@ function quickAddFriend() {
   S.friends.push(f); save(); addFriendTo?.(f.id);
 }
 
+// The picker rejects the whole request (TypeError) if asked for a field the phone doesn't support,
+// so learn the supported ones up front; select() must still run straight from the tap.
+let contactProps = ['name', 'tel'];
 function renderFriends() {
   const supportsContacts = 'contacts' in navigator && 'select' in navigator.contacts;
+  if (supportsContacts) navigator.contacts.getProperties?.().then(p => { contactProps = ['name', 'tel', 'email'].filter(x => p.includes(x)); }).catch(() => {});
   $('#view').innerHTML = `
     <div class="card">
       <b>Add a friend</b>
@@ -981,8 +985,8 @@ document.addEventListener('click', async e => {
     case 'friend-contacts': {
       // Cancelling resolves with [], so an exception is a real failure: show it instead of doing nothing.
       let picked;
-      try { picked = await navigator.contacts.select(['name', 'tel', 'email'], { multiple: true }); }
-      catch (err) { toast(`Couldn't open contacts (${err.name || err}). Type the name above instead.`); break; }
+      try { picked = await navigator.contacts.select(contactProps, { multiple: true }); }
+      catch (err) { toast(`Couldn't open contacts (${err.name || err}${err.message ? ': ' + err.message : ''}). Type the name above instead.`); break; }
       for (const c of picked) S.friends.push({ id: uid(), name: c.name?.[0] || c.tel?.[0] || 'Friend', phone: c.tel?.[0] || '', email: c.email?.[0] || '' });
       save(); renderFriends();
       if (picked.length) toast(`Added ${picked.length} friend${picked.length > 1 ? 's' : ''}`);
