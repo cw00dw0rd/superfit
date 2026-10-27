@@ -418,8 +418,16 @@ function renderFriends() {
       const n = S.log.filter(l => (l.friends || []).includes(f.id)).length;
       return `<div class="card row"><div class="grow"><div class="name">${h(f.name)}</div>
         <div class="muted small">${h([f.phone, f.email].filter(Boolean).join(' · ') || 'no contact info')}${n ? ` · ${n} workout${n > 1 ? 's' : ''} together` : ''}</div></div>
-        <button class="btn sm plain" data-act="friend-del" data-id="${f.id}">✕</button></div>`;
+        <button class="btn sm plain" data-act="friend-edit" data-id="${f.id}">Edit</button>
+        <button class="btn sm plain" data-act="friend-del" data-id="${f.id}" aria-label="Remove ${h(f.name)}">✕</button></div>`;
     }).join('') : `<div class="empty">No friends yet.</div>`}`;
+}
+function friendSheet(f) {
+  modal(`<h3>Edit friend</h3>
+    <label>Name</label><input id="fe-name" value="${h(f.name)}">
+    <label>Phone (for WhatsApp / SMS)</label><input id="fe-phone" type="tel" value="${h(f.phone)}" placeholder="0151 2345678">
+    <label>Email (for calendar invites)</label><input id="fe-email" type="email" value="${h(f.email)}" placeholder="alex@example.com">
+    <div class="actions"><button class="btn block" data-act="friend-save" data-id="${f.id}">Save</button></div>`);
 }
 
 // ---------- gamification ----------
@@ -971,12 +979,20 @@ document.addEventListener('click', async e => {
       S.friends.push({ id: uid(), name, phone: $('#fr-phone').value.trim(), email: $('#fr-email').value.trim() }); save(); renderFriends(); break;
     }
     case 'friend-contacts': {
-      try {
-        const picked = await navigator.contacts.select(['name', 'tel', 'email'], { multiple: true });
-        for (const c of picked) S.friends.push({ id: uid(), name: c.name?.[0] || c.tel?.[0] || 'Friend', phone: c.tel?.[0] || '', email: c.email?.[0] || '' });
-        save(); renderFriends();
-      } catch { /* cancelled */ }
+      // Cancelling resolves with [], so an exception is a real failure: show it instead of doing nothing.
+      let picked;
+      try { picked = await navigator.contacts.select(['name', 'tel', 'email'], { multiple: true }); }
+      catch (err) { toast(`Couldn't open contacts (${err.name || err}). Type the name above instead.`); break; }
+      for (const c of picked) S.friends.push({ id: uid(), name: c.name?.[0] || c.tel?.[0] || 'Friend', phone: c.tel?.[0] || '', email: c.email?.[0] || '' });
+      save(); renderFriends();
+      if (picked.length) toast(`Added ${picked.length} friend${picked.length > 1 ? 's' : ''}`);
       break;
+    }
+    case 'friend-edit': friendSheet(S.friends.find(f => f.id === id)); break;
+    case 'friend-save': {
+      const name = $('#fe-name').value.trim(); if (!name) return toast('Enter a name');
+      Object.assign(S.friends.find(f => f.id === id), { name, phone: $('#fe-phone').value.trim(), email: $('#fe-email').value.trim() });
+      save(); closeModal(); renderFriends(); toast('Friend updated'); break;
     }
     case 'friend-del': S.friends = S.friends.filter(f => f.id !== id); save(); renderFriends(); break;
     case 'sync': runSync(); break;
