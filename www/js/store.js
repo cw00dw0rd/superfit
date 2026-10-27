@@ -7,13 +7,14 @@
 // Environment-neutral (browser + Node tests): pass in a Storage-like object.
 
 export const STORAGE_KEY = 'sfp.v1';
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export const DEFAULTS = {
   prefs: { studios: [], plan: 'all', day: 'all', tod: 'all', q: '', weeklyGoal: 2, days: [], tods: [], plans: [], allStudios: false },
   agenda: [], friends: [], log: [], nameFixes: {}, schedule: null, lastSync: null,
   rewards: [{ at: 2, text: '', receivedAt: null }, { at: 5, text: '', receivedAt: null }, { at: 10, text: '', receivedAt: null }],
   badgesSeen: null,
+  me: { name: '', phone: '', asked: false },
 };
 
 // MIGRATIONS[n] upgrades data from version n-1 to n. Append only; never edit a released one.
@@ -38,6 +39,8 @@ const MIGRATIONS = {
     rewards: Array.isArray(s.rewards) ? s.rewards : DEFAULTS.rewards.map(r => ({ ...r })),
     badgesSeen: Array.isArray(s.badgesSeen) ? s.badgesSeen : null,
   }),
+  // v4 (2026-10-27): me = your own name/phone, sent in invite links; asked = the name prompt was shown.
+  4: s => ({ ...s, me: isObj(s.me) ? s.me : { ...DEFAULTS.me } }),
 };
 
 const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
@@ -57,6 +60,7 @@ export function normalize(s) {
   for (const d of DEFAULTS.rewards) if (!out.rewards.some(r => r.at === d.at)) out.rewards.push({ ...d });
   out.rewards.sort((a, b) => a.at - b.at);
   if (!('badgesSeen' in out) || (out.badgesSeen !== null && !Array.isArray(out.badgesSeen))) out.badgesSeen = null;
+  out.me = { ...DEFAULTS.me, ...(isObj(s.me) ? s.me : {}) };
   out.agenda = out.agenda.map(e => ({ status: 'planned', ...e, friends: arr(e?.friends) }));
   out.log = out.log.map(l => ({ ...l, friends: arr(l?.friends) }));
   return out;

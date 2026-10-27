@@ -80,6 +80,13 @@ check('v2 upgrade adds rewards and leaves the log as is', () => {
   assert.ok(s.log.every(l => !('type' in l)));
 });
 
+// 4d. v3 -> v4: an empty "me" is added; an existing one is kept.
+check('v3 upgrade adds me', () => {
+  const v3 = JSON.parse(fs.readFileSync(new URL('v3.json', dir)));
+  assert.deepEqual(migrate(v3).state.me, { name: '', phone: '', asked: false });
+  assert.deepEqual(migrate({ ...v3, me: { name: 'Chris', extra: 1 } }).state.me, { name: 'Chris', phone: '', asked: false, extra: 1 });
+});
+
 // 5. Unreadable data is quarantined, never overwritten.
 check('corrupt data is quarantined', () => {
   const st = memory({ [STORAGE_KEY]: '{"agenda": [ broken' });

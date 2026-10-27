@@ -101,7 +101,49 @@ function downloadIcs(e) {
 function inviteText(e) {
   const ev = eventOf(e);
   return `Join me for ${e.name} at Superfit ${ev.st.name} on ${fmtDate(e.date)} ${e.start}–${e.end}! 💪\n` +
-    `Add to calendar: ${gcalUrl(e)}\nRoute: ${routeUrl(ev.st)}`;
+    `Add it to your SF Planner: ${joinUrl(e)}\nAdd to calendar: ${gcalUrl(e)}\nRoute: ${routeUrl(ev.st)}`;
+}
+
+// ---------- invite links: the class snapshot + who invited, in the URL hash (no server) ----------
+const b64u = s => btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const unb64u = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)));
+const joinUrl = e => `${location.origin}${location.pathname}#join=${b64u(JSON.stringify({ v: 1, c: e.classId, n: e.name, s: e.studio, sn: e.studioName, p: e.plan, d: e.date, a: e.start, b: e.end, f: S.me.name, t: S.me.phone }))}`;
+function readJoin(text) {
+  const m = String(text || '').match(/join=([\w-]+)/);
+  try { const j = m && JSON.parse(unb64u(m[1])); return j?.n && j.d && j.a ? j : null; } catch { return null; }
+}
+// iPhone Home Screen apps keep their own storage, apart from Safari where shared links open.
+const isIos = /iP(hone|ad|od)/.test(navigator.userAgent);
+const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+let pendingJoin = null;
+function joinSheet(j) {
+  pendingJoin = j;
+  const have = S.agenda.some(a => a.date === j.d && a.start === j.a && (a.classId === j.c || a.name === j.n));
+  const past = j.d < todayYmd();
+  modal(`<h3>${j.f ? `${h(j.f)} invited you` : 'You’re invited'}</h3>
+    <div class="card"><div class="name">${h(j.n)}</div><div class="muted small">${fmtDate(j.d)} ${h(j.a)}–${h(j.b)} · ${h(j.sn)}</div></div>
+    ${have ? `<p class="muted">Already in your agenda.</p>` : past ? `<p class="muted">This class has already taken place.</p>`
+      : `<button class="btn block" data-act="join-add">Add to my agenda</button>
+        ${isIos && !standalone ? `<p class="small muted">Using SF Planner from your Home Screen? Copy the invite, open the app and tap “Paste invite” in Agenda.</p>
+          <button class="btn ghost block" data-act="join-copy">Copy invite</button>` : ''}`}`);
+}
+// Adds the class (a snapshot, like any agenda entry) with the inviter as a friend on it.
+function acceptJoin(j) {
+  let f = null;
+  if (j.f) {
+    f = S.friends.find(x => (j.t && x.phone && waPhone(x.phone) === waPhone(j.t)) || x.name.toLowerCase() === j.f.toLowerCase());
+    if (!f) S.friends.push(f = { id: uid(), name: j.f, phone: j.t || '', email: '' });
+    else if (j.t && !f.phone) f.phone = j.t;
+  }
+  S.agenda.push({ id: uid(), classId: j.c, name: j.n, studio: j.s, studioName: j.sn || studioById(j.s).name, plan: j.p, date: j.d, start: j.a, end: j.b, friends: f ? [f.id] : [], status: 'planned' });
+  save(); closeModal(); tab = 'agenda'; render();
+  toast(`Added ${j.n}${f ? ` with ${f.name}` : ''}`);
+}
+function openJoinFromHash() {
+  const j = readJoin(location.hash);
+  if (!j) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  joinSheet(j);
 }
 
 // German numbers default: 0151… -> 49151…
@@ -345,7 +387,8 @@ function renderAgenda() {
     ${pending.length ? `<h2>Did you go?</h2>${pending.map(e => card(e, true)).join('')}` : ''}
     <h2>Upcoming</h2>
     ${upcoming.length ? upcoming.map(e => card(e, false)).join('') : `<div class="empty">Nothing planned. Find a class and tap “Add to agenda”.</div>`}
-    <div class="actions"><button class="btn plain block" data-act="log-manual">＋ Log another workout</button></div>
+    <div class="actions"><button class="btn plain block" data-act="log-manual">＋ Log another workout</button>
+      ${isIos && standalone ? `<button class="btn plain block" data-act="join-paste">📋 Paste invite</button>` : ''}</div>
     <h2>Completed</h2>
     ${done.length ? done.slice(0, showAllDone ? done.length : 10).map(l => `<div class="card row"><div class="grow"><div class="name">${workoutIcon(l)} ${h(l.name)}</div>
       <div class="muted small">${workoutLine(l)}</div></div>
@@ -367,6 +410,11 @@ function calendarSheet(e) {
 }
 
 function inviteSheet(e) {
+  if (!S.me.name && !S.me.asked) return modal(`<h3>Your name</h3>
+    <p class="small muted">Shown to friends when they open your invite link, so the class is added with you as their friend.</p>
+    <label>Name</label><input id="me-name" placeholder="Chris" maxlength="40">
+    <label>Phone (optional, so they can message you)</label><input id="me-phone" type="tel" placeholder="0151 2345678">
+    <div class="actions"><button class="btn block" data-act="me-save" data-id="${e.id}">Continue</button></div>`);
   modal(`<h3>Invite friends</h3>
     <p class="small muted">${h(e.name)} · ${fmtDate(e.date)} ${e.start} · ${h(e.studioName)}</p>
     ${S.friends.length ? S.friends.map(f => `<label class="check"><input type="checkbox" data-friend="${f.id}" ${e.friends.includes(f.id) ? 'checked' : ''}> <span class="grow">${h(f.name)}</span>
@@ -776,6 +824,12 @@ function renderSettings() {
       ${unknownNames.map(n => `<label>${h(n)}</label><input data-fix="${h(n)}" placeholder="Correct name">`).join('')}
       <div class="actions"><button class="btn" data-act="save-fixes">Save names</button></div></div>` : ''}
     <div class="card">
+      <b>You</b>
+      <p class="small muted">Sent in your invite links so friends see who invited them.</p>
+      <label>Name</label><input id="set-me-name" value="${h(S.me.name)}" placeholder="Chris" maxlength="40">
+      <label>Phone (optional)</label><input id="set-me-phone" type="tel" value="${h(S.me.phone)}" placeholder="0151 2345678">
+    </div>
+    <div class="card">
       <b>Weekly goal</b>
       <select id="goal">${[1, 2, 3, 4, 5, 6, 7].map(n => `<option ${n === S.prefs.weeklyGoal ? 'selected' : ''}>${n}</option>`).join('')}</select>
     </div>
@@ -895,6 +949,7 @@ document.addEventListener('input', e => {
 document.addEventListener('change', e => {
   const t = e.target;
   if (t.id === 'goal') { S.prefs.weeklyGoal = +t.value; save(); toast('Goal saved'); }
+  else if (t.id === 'set-me-name' || t.id === 'set-me-phone') { S.me = { ...S.me, [t.id === 'set-me-name' ? 'name' : 'phone']: t.value.trim(), asked: true }; save(); toast('Saved'); }
   else if (t.id === 'pdf-input') { if (t.files.length) importPdfs([...t.files]); }
   else if (t.id === 'backup-input') importBackup(t.files[0]);
 });
@@ -940,6 +995,17 @@ document.addEventListener('click', async e => {
     case 'add-agenda': { const d = $('#class-date')?.value; if (!d) return toast('No upcoming date'); addToAgenda(id, d); closeModal(); if (tab === 'search') renderSearch(); break; }
     case 'add-invite': { const d = $('#class-date')?.value; if (!d) return toast('No upcoming date'); const ent = addToAgenda(id, d); inviteSheet(ent); break; }
     case 'invite': inviteSheet(agendaEntry(id)); break;
+    case 'me-save': S.me = { ...S.me, name: $('#me-name').value.trim(), phone: $('#me-phone').value.trim(), asked: true }; save(); inviteSheet(agendaEntry(id)); break;
+    case 'join-add': acceptJoin(pendingJoin); break;
+    case 'join-copy': await navigator.clipboard?.writeText(`${location.origin}${location.pathname}#join=${b64u(JSON.stringify(pendingJoin))}`); toast('Invite copied. Now open SF Planner from your Home Screen.'); break;
+    case 'join-paste': {
+      let j = null;
+      try { j = readJoin(await navigator.clipboard.readText()); } catch { /* no clipboard access */ }
+      if (j) joinSheet(j);
+      else modal(`<h3>Paste invite</h3><input id="join-text" placeholder="Paste the invite link"><div class="actions"><button class="btn block" data-act="join-read">Continue</button></div>`);
+      break;
+    }
+    case 'join-read': { const j = readJoin($('#join-text').value); if (j) joinSheet(j); else toast('That isn’t an SF Planner invite link'); break; }
     case 'cal': calendarSheet(agendaEntry(id)); break;
     case 'ics': downloadIcs(agendaEntry(id)); break;
     case 'mark-invited': { const ent = agendaEntry(id); if (!ent.friends.includes(el.dataset.friend)) { ent.friends.push(el.dataset.friend); save(); } break; }
@@ -1026,6 +1092,8 @@ async function importBackup(file) {
 // ---------- boot ----------
 await loadData();
 render();
+openJoinFromHash();
+addEventListener('hashchange', openJoinFromHash);
 checkNewBadges(); // first run after an upgrade records already-earned badges without pop-ups
 if (loaded.corrupt) toast('Saved data could not be read; a copy was kept. Restore a backup in Settings.');
 else if (loaded.newer) toast('This data is from a newer app version. Reload to update the app.');
