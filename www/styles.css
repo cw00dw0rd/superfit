@@ -268,3 +268,5 @@ button.badge-tile:active { transform: scale(.96); }
 .reward.ready .btn { animation: pulse 1.6s infinite; }
 @keyframes pulse { 50% { box-shadow: 0 0 0 6px var(--accent-soft); } }
 @media (prefers-reduced-motion: reduce) { .reward.ready .btn { animation: none; } }
+.qf:not([hidden]) { display: inline-flex; gap: 4px; align-items: center; }
+.qf input { width: 9em; padding: 4px 8px; margin: 0; }

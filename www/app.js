@@ -375,7 +375,8 @@ function inviteSheet(e) {
                      <a class="btn sm plain" href="sms:${h(f.phone)}?body=${encodeURIComponent(inviteText(e))}" data-act="mark-invited" data-id="${e.id}" data-friend="${f.id}">SMS</a>` : ''}
         ${f.email ? `<a class="btn sm plain" href="mailto:${h(f.email)}?subject=${encodeURIComponent('Workout: ' + e.name)}&body=${encodeURIComponent(inviteText(e))}" data-act="mark-invited" data-id="${e.id}" data-friend="${f.id}">Email</a>` : ''}
       </span></label>`).join('')
-      : `<p class="muted">No friends yet. Add some in the Friends tab, or just share:</p>`}
+      : `<p class="muted">Who are you inviting?</p>`}
+    <div class="lf-friends">${quickFriendHtml()}</div>
     <div class="actions" style="flex-direction:column">
       <button class="btn" data-act="share" data-id="${e.id}">Share via… (any app)</button>
       <button class="btn ghost" data-act="cal" data-id="${e.id}">Send calendar invite</button>
@@ -384,7 +385,19 @@ function inviteSheet(e) {
       e.friends = cb.checked ? [...new Set([...e.friends, cb.dataset.friend])] : e.friends.filter(id => id !== cb.dataset.friend);
       save();
     }));
+    addFriendTo = fid => { e.friends.push(fid); save(); inviteSheet(e); };
   });
+}
+
+// Inline "＋ Friend" (name only, saved to the Friends list); addFriendTo(id) ticks them where they were added.
+let addFriendTo = null;
+const quickFriendHtml = () => `<button class="chip" data-act="qf-open">＋ Friend</button>
+  <span id="qf" class="qf" hidden><input id="qf-name" placeholder="Name" maxlength="40" aria-label="Friend's name"><button class="chip on" data-act="qf-add">Add</button></span>`;
+function quickAddFriend() {
+  const name = $('#qf-name').value.trim();
+  if (!name) return $('#qf-name').focus();
+  const f = { id: uid(), name, phone: '', email: '' };
+  S.friends.push(f); save(); addFriendTo?.(f.id);
 }
 
 function renderFriends() {
@@ -509,7 +522,7 @@ function stats() {
     count('long-90', '🏃', 'Long haul', 'Do one workout of 90 minutes or more.' + timeHint, longest, 90, 'long-90', 'min'),
     count('week-300', '📈', 'Big week', 'Log 5 hours of workouts in one week (Mon–Sun).' + timeHint, Math.floor(bestWeekMin / 6) / 10, 5, 'week-300', 'h'),
     count('quick-5', '💨', 'Quick hit', 'Log 5 short workouts of 30 minutes or less.' + timeHint, quick, 5, 'quick-5'),
-    flag('friend', '🤝', 'Brought a friend', 'Log a workout with a friend: tick them when you log it, or invite them to a planned class and check in.', log.some(l => (l.friends || []).length)),
+    flag('friend', '🤝', 'Brought a friend', 'Log a workout with a friend: tap ＋ Friend when you log it (or Edit a logged workout), or invite a friend to a planned class and check in.', log.some(l => (l.friends || []).length)),
     count('classes-5', '🎨', '5 class types', 'Do 5 different classes or workouts (by name).', seen.size, 5, 'classes'),
     count('studios-2', '🧭', '2 studios', 'Work out at 2 different Superfit studios.', studios.size, 2, 'studios'),
     count('mixed-week', '🌈', 'Mixed week', 'Log 3 different workout types in one week (Mon–Sun).', weekTypes, 3, 'mixed-week'),
@@ -679,9 +692,11 @@ function openLogForm(existing) {
       <button class="clock" data-act="lf-time" aria-label="Add duration" aria-expanded="false">⏱</button>
     </div>
     <div id="lf-times" class="segrow" hidden>${[30, 45, 60, 90].map(m => `<button class="seg" data-act="lf-min" data-id="${m}">${m} min</button>`).join('')}<input id="lf-min" type="number" min="1" max="600" inputmode="numeric" placeholder="min" aria-label="Minutes"></div>
-    ${S.friends.length ? `<div class="lf-friends" aria-label="Friends who came">👥 ${S.friends.map(f => `<button class="chip" data-act="lf-friend" data-id="${f.id}">${h(f.name)}</button>`).join('')}</div>` : ''}
+    <div class="lf-friends" aria-label="Friends who came">${lfFriendsHtml()}</div>
     <div class="actions"><button class="btn block" data-act="log-save">Save</button></div>`, syncLogForm);
+  addFriendTo = fid => { logForm.friends.push(fid); $('.lf-friends').innerHTML = lfFriendsHtml(); syncLogForm(); };
 }
+const lfFriendsHtml = () => `👥 ${S.friends.map(f => `<button class="chip" data-act="lf-friend" data-id="${f.id}">${h(f.name)}</button>`).join('')}${quickFriendHtml()}`;
 function syncLogForm() {
   const f = logForm;
   document.querySelectorAll('.typebtn').forEach(b => { const on = b.dataset.id === f.type; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
@@ -697,6 +712,7 @@ function syncLogForm() {
 function saveLogForm() {
   const f = logForm;
   if (!f.type) { toast('Pick a workout type'); document.querySelector('.typegrid')?.classList.add('shake'); setTimeout(() => document.querySelector('.typegrid')?.classList.remove('shake'), 400); return; }
+  if ($('#qf-name')?.value.trim()) quickAddFriend(); // typed a name but tapped Save, not Add
   const t = typeById(f.type), note = ($('#lf-note')?.value || '').trim();
   const sid = $('#lf-studio').value, date = $('#lf-date').value || todayYmd();
   const fields = { type: f.type, date, studio: sid, studioName: sid ? studioById(sid).name : '', friends: f.friends,
@@ -724,7 +740,7 @@ function checkIn(ent) {
   const e = logWorkout({ date: ent.date, start: ent.start, name: ent.name, studio: ent.studio, studioName: ent.studioName, classId: ent.classId,
     friends: ent.friends || [], type, ...(minutes > 0 ? { minutes } : {}) });
   render();
-  toast(`Logged ${ent.name} · ${typeById(type).label}${minutes > 0 ? ` · ${minutes} min` : ''}`, [{ label: 'Edit', act: 'log-edit', id: e.id }]);
+  toast(`Logged ${ent.name} · ${typeById(type).label}${minutes > 0 ? ` · ${minutes} min` : ''}${ent.friends?.length ? '' : ' · Came with a friend?'}`, [{ label: 'Edit', act: 'log-edit', id: e.id }]);
   checkNewBadges();
 }
 
@@ -929,6 +945,8 @@ document.addEventListener('click', async e => {
     case 'lf-type': logForm.type = id; syncLogForm(); if (id === 'other') $('#lf-note')?.focus(); break;
     case 'lf-time': logForm.showTime = !logForm.showTime; syncLogForm(); break;
     case 'lf-min': logForm.minutes = logForm.minutes === +id ? null : +id; syncLogForm(); break;
+    case 'qf-open': { const q = $('#qf'), inp = $('#qf-name'); q.hidden = false; el.hidden = true; inp.onkeydown = ev => ev.key === 'Enter' && quickAddFriend(); inp.focus(); break; }
+    case 'qf-add': quickAddFriend(); break;
     case 'lf-friend': logForm.friends = toggle(logForm.friends, id); syncLogForm(); break;
     case 'log-save': saveLogForm(); break;
     case 'badge': {
