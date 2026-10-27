@@ -407,14 +407,14 @@ function renderFriends() {
   const supportsContacts = 'contacts' in navigator && 'select' in navigator.contacts;
   if (supportsContacts) navigator.contacts.getProperties?.().then(p => { contactProps = ['name', 'tel', 'email'].filter(x => p.includes(x)); }).catch(() => {});
   $('#view').innerHTML = `
+    ${supportsContacts ? `<button class="btn block" style="margin-bottom:12px" data-act="friend-contacts">👥 Pick from contacts</button>` : ''}
     <div class="card">
-      <b>Add a friend</b>
+      <b>${supportsContacts ? 'Or add by hand' : 'Add a friend'}</b>
       <label>Name</label><input id="fr-name" placeholder="Alex">
       <label>Phone (for WhatsApp / SMS)</label><input id="fr-phone" type="tel" placeholder="0151 2345678">
       <label>Email (for calendar invites)</label><input id="fr-email" type="email" placeholder="alex@example.com">
       <div class="actions">
         <button class="btn" data-act="friend-add">Add</button>
-        ${supportsContacts ? `<button class="btn ghost" data-act="friend-contacts">Pick from contacts</button>` : ''}
       </div>
     </div>
     <h2>Your friends</h2>
@@ -986,7 +986,7 @@ document.addEventListener('click', async e => {
       // Cancelling resolves with [], so an exception is a real failure: show it instead of doing nothing.
       let picked;
       try { picked = await navigator.contacts.select(contactProps, { multiple: true }); }
-      catch (err) { toast(`Couldn't open contacts (${err.name || err}${err.message ? ': ' + err.message : ''}). Type the name above instead.`); break; }
+      catch (err) { toast(`Couldn't open contacts (${err.name || err}${err.message ? ': ' + err.message : ''})`); break; }
       for (const c of picked) S.friends.push({ id: uid(), name: c.name?.[0] || c.tel?.[0] || 'Friend', phone: c.tel?.[0] || '', email: c.email?.[0] || '' });
       save(); renderFriends();
       if (picked.length) toast(`Added ${picked.length} friend${picked.length > 1 ? 's' : ''}`);
